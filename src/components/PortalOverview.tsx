@@ -576,14 +576,20 @@ export default function PortalOverview({
           </style>
       </head>
       <body>
-          <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 25px;">
-              <div style="text-align: center; font-weight: bold; font-size: 13px; width: 40%;">
-                  SỞ GD&ĐT HÀ NỘI<br>TRƯỜNG THCS HÒA PHÚ
-              </div>
-              <div style="text-align: center; font-weight: bold; font-size: 13px; width: 50%;">
-                  CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM<br>Độc lập - Tự do - Hạnh phúc
-              </div>
-          </div>
+          <table style="width: 100%; border-bottom: 2px solid #1e3a8a; margin-top: 0px; margin-bottom: 25px; border-collapse: collapse; border: none;">
+              <tr>
+                  <td style="text-align: center; font-weight: bold; font-size: 13px; width: 45%; border: none; padding: 0 0 10px 0; line-height: 1.5;">
+                      SỞ GD&ĐT HÀ NỘI<br>
+                      <b>TRƯỜNG THCS HÒA PHÚ</b><br>
+                      -------
+                  </td>
+                  <td style="text-align: center; font-weight: bold; font-size: 13px; width: 55%; border: none; padding: 0 0 10px 0; line-height: 1.5;">
+                      CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM<br>
+                      <b>Độc lập - Tự do - Hạnh phúc</b><br>
+                      ------------------------
+                  </td>
+              </tr>
+          </table>
           
           <h2 style="color: #1e3a8a; text-transform: uppercase;">BẢNG TỔNG HỢP Ý KIẾN KHẢO SÁT PHỤ HUYNH TOÀN TRƯỜNG</h2>
           <h3 style="font-style: italic; font-weight: normal; font-size: 12px; color: #64748b;">(Ghi nhận đóng góp trực tuyến & bản giấy nộp kèm)</h3>
