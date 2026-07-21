@@ -16,6 +16,7 @@ import PortalSidebar from './components/PortalSidebar';
 import PortalOverview from './components/PortalOverview';
 import PortalRightNavBanner from './components/PortalRightNavBanner';
 import PortalMySubmissions from './components/PortalMySubmissions';
+import PortalAIAssistant from './components/PortalAIAssistant';
 
 import { 
   ClassDetailView, 
@@ -331,6 +332,13 @@ export default function App() {
             settings={settings}
             onSaveSettings={handleSaveSettings}
             showToast={showToast}
+          />
+        );
+
+      case 'ai-assistant':
+        return (
+          <PortalAIAssistant
+            currentUser={currentUser}
           />
         );
 

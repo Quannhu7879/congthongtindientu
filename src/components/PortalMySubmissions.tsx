@@ -16,7 +16,8 @@ import {
   X,
   FileSpreadsheet,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Inbox
 } from 'lucide-react';
 import { 
   User, 
@@ -143,7 +144,7 @@ export default function PortalMySubmissions({
   const [editSubmissionText, setEditSubmissionText] = useState('');
 
   const currentUsername = currentUser ? currentUser.username : '';
-  const currentFullName = currentUser ? currentUser.fullName : '';
+  const currentFullName = currentUser ? currentUser.name : '';
 
   // Filter content items based on search and current user authorship
   const getFilteredItems = () => {
@@ -401,7 +402,7 @@ export default function PortalMySubmissions({
             QUẢN LÝ NỘI DUNG TÔI GỬI LÊN
           </h2>
           <p className="text-xs text-slate-500 font-medium">
-            Danh sách lưu trữ, chỉnh sửa và thu hồi các tin bài, biểu mẫu khảo sát, văn bản chỉ đạo hoặc bài nộp của tài khoản <span className="font-extrabold text-brandBlue">{currentUser?.fullName}</span> ({currentUser?.role})
+            Danh sách lưu trữ, chỉnh sửa và thu hồi các tin bài, biểu mẫu khảo sát, văn bản chỉ đạo hoặc bài nộp của tài khoản <span className="font-extrabold text-brandBlue">{currentUser?.name}</span> ({currentUser?.role})
           </p>
         </div>
       </div>
