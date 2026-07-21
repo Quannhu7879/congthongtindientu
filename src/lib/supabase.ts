@@ -327,7 +327,15 @@ export async function getSupabaseData<T>(tableName: string, fallbackData: T): Pr
 // Save specific list of records to Supabase using upsert
 export async function saveSupabaseData<T extends { id: any }>(tableName: string, dataList: T[]): Promise<{ success: boolean; error?: string }> {
   try {
-    if (!dataList || dataList.length === 0) return { success: true };
+    if (!dataList || dataList.length === 0) {
+      // If the list is empty, delete everything in the table to stay in sync
+      const { error: deleteError } = await supabase.from(tableName).delete().neq('id', 'impossible_id_val_999_xyz_delete_all');
+      if (deleteError) {
+        console.error(`[Supabase Clear Error] Failed to clear "${tableName}":`, deleteError);
+        return { success: false, error: deleteError.message };
+      }
+      return { success: true };
+    }
     
     // Format JSON fields before writing (some objects need simple preparation)
     const formattedData = dataList.map(item => {
@@ -340,6 +348,20 @@ export async function saveSupabaseData<T extends { id: any }>(tableName: string,
       console.error(`[Supabase Save Error] Upsert failed for "${tableName}":`, error);
       return { success: false, error: error.message };
     }
+
+    // Clean up orphaned rows (rows that are in Supabase but not in the new dataList)
+    const ids = dataList.map(item => item.id);
+    const formattedIdsStr = ids.map(id => String(id)).join(',');
+    
+    const { error: deleteError } = await supabase
+      .from(tableName)
+      .delete()
+      .not('id', 'in', `(${formattedIdsStr})`);
+
+    if (deleteError) {
+      console.warn(`[Supabase Sync Warning] Failed to delete orphaned rows for "${tableName}":`, deleteError);
+    }
+
     return { success: true };
   } catch (err: any) {
     console.error(`[Supabase Save Exception] on "${tableName}":`, err);
