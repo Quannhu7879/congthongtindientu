@@ -436,9 +436,9 @@ export default function PortalOverview({
     showToast("Đăng tải bài viết hoạt động thành công!", "success");
   };
 
-  // File download helper (Microsoft Word MIME DOC)
+  // File download helper (Microsoft Word MIME DOCX)
   const triggerDocDownload = (filename: string, htmlMarkup: string) => {
-    const blob = new Blob(['\ufeff' + htmlMarkup], { type: 'application/msword;charset=utf-8' });
+    const blob = new Blob(['\ufeff' + htmlMarkup], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -514,7 +514,7 @@ export default function PortalOverview({
       </body>
       </html>
     `;
-    triggerDocDownload(`Phieu_Gop_Y_PH_${survey.parentName.replace(/\s+/g, '_')}.doc`, markup);
+    triggerDocDownload(`Phieu_Gop_Y_PH_${survey.parentName.replace(/\s+/g, '_')}.docx`, markup);
     showToast(`Đã xuất file biểu mẫu tiếp nhận của PH ${survey.parentName}`, "success");
   };
 
@@ -631,7 +631,7 @@ export default function PortalOverview({
       </html>
     `;
 
-    triggerDocDownload("Bao_Cao_Tong_Hop_Khao_Sat_PH.doc", htmlMarkup);
+    triggerDocDownload("Bao_Cao_Tong_Hop_Khao_Sat_PH.docx", htmlMarkup);
     showToast("Đã xuất báo cáo tổng hợp khảo sát (Word)", "success");
   };
 
@@ -1173,10 +1173,10 @@ export default function PortalOverview({
               <div className="flex gap-1.5 shrink-0">
                 <button 
                   type="button"
-                  onClick={() => triggerDocDownload("Don_Khao_Sat_Y_Kien_PH.doc", "<h2>BIỂU MẪU KHẢO SÁT CHẤT LƯỢNG THCS HÒA PHÚ</h2><p>Họ tên PH:................................... Tên HS: .......................... Lớp: .............</p><p>Ý kiến đóng góp: .................................................................................</p><p>Ký tên: ..........................</p>")}
+                  onClick={() => triggerDocDownload("Don_Khao_Sat_Y_Kien_PH.docx", "<h2>BIỂU MẪU KHẢO SÁT CHẤT LƯỢNG THCS HÒA PHÚ</h2><p>Họ tên PH:................................... Tên HS: .......................... Lớp: .............</p><p>Ý kiến đóng góp: .................................................................................</p><p>Ký tên: ..........................</p>")}
                   className="bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] px-3.5 py-2.5 rounded-lg shadow transition-all flex items-center gap-1.5 cursor-pointer"
                 >
-                  <FileText className="w-3.5 h-3.5" /> Bản Word (.doc)
+                  <FileText className="w-3.5 h-3.5" /> Bản Word (.docx)
                 </button>
                 <button 
                   type="button"

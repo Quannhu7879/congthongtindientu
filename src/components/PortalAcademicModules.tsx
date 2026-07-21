@@ -112,11 +112,11 @@ export function PortalCourseRegistration({
       </body>
       </html>
     `;
-    const blob = new Blob(['\ufeff' + docHTML], { type: 'application/msword;charset=utf-8' });
+    const blob = new Blob(['\ufeff' + docHTML], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = "Don_Dang_Ky_Hoc_Nang_Khieu.doc";
+    a.download = "Don_Dang_Ky_Hoc_Nang_Khieu.docx";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -187,11 +187,11 @@ export function PortalCourseRegistration({
       </body>
       </html>
     `;
-    const blob = new Blob(['\ufeff' + approvalDoc], { type: 'application/msword;charset=utf-8' });
+    const blob = new Blob(['\ufeff' + approvalDoc], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Quyet_Dinh_Hoc_Nang_Khieu_${reg.studentName.replace(/\s+/g, '_')}.doc`;
+    a.download = `Quyet_Dinh_Hoc_Nang_Khieu_${reg.studentName.replace(/\s+/g, '_')}.docx`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -376,7 +376,7 @@ export function PortalCourseRegistration({
                               onClick={() => downloadSignedApproval(r)}
                               className="text-[10px] text-emerald-700 hover:text-white font-bold flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-600 px-2 py-1 rounded-md border border-emerald-200 hover:border-emerald-600 transition shadow-sm cursor-pointer"
                             >
-                              <Download className="w-3 h-3" /> Quyết định (.doc)
+                              <Download className="w-3 h-3" /> Quyết định (.docx)
                             </button>
                           )}
                         </div>
@@ -466,16 +466,17 @@ export function PortalDocuments({
   const downloadDocument = (doc: OfficialDocument) => {
     // mock download
     const markup = `<h2>VĂN BẢN CHỈ ĐẠO THCS HÒA PHÚ</h2><p><b>Tiêu đề:</b> ${doc.title}</p><p><b>Ban hành:</b> ${doc.category} - Ngày: ${doc.date}</p>`;
-    const blob = new Blob(['\ufeff' + markup], { type: 'application/msword;charset=utf-8' });
+    const blob = new Blob(['\ufeff' + markup], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = doc.file ? doc.file.name : "van_ban_chi_dao.doc";
+    const downloadName = doc.file ? doc.file.name.replace(/\.doc$/, '.docx') : "van_ban_chi_dao.docx";
+    a.download = downloadName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    showToast(`Đã tải về tệp tin: ${doc.file ? doc.file.name : ''}`, "success");
+    showToast(`Đã tải về tệp tin: ${downloadName}`, "success");
   };
 
   const filteredDocs = filterTab === 'all' ? documents : documents.filter(d => d.category === filterTab);
@@ -556,7 +557,7 @@ export function PortalDocuments({
                       onClick={() => downloadDocument(doc)}
                       className="text-brandBlue hover:text-brandBlue-dark font-extrabold flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg border border-blue-200 cursor-pointer ml-auto"
                     >
-                      <Download className="w-3.5 h-3.5" /> Tải (.doc)
+                      <Download className="w-3.5 h-3.5" /> Tải (.docx)
                     </button>
                   </td>
                 </tr>

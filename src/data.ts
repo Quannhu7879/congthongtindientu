@@ -86,7 +86,7 @@ const defaultCourseRegistrations: CourseRegistration[] = [
     studentName: 'Nguyễn Kim Ngân', 
     classInfo: '9A', 
     courses: ['Toán', 'Tiếng Anh'], 
-    file: { name: 'DK_Ngan.doc', size: '1.2 MB' }, 
+    file: { name: 'DK_Ngan.docx', size: '1.2 MB' }, 
     status: 'Đã duyệt', 
     date: '19/06/2026' 
   }
@@ -177,7 +177,7 @@ const defaultDocuments: OfficialDocument[] = [
     title: "Kế hoạch thi đua khen thưởng năm học 2025 - 2026", 
     category: "Cấp Trường", 
     date: "19/06/2026", 
-    file: { name: "KH_Thi_Dua_Khen_Thuong.doc", ext: "doc", size: "1.0 MB" } 
+    file: { name: "KH_Thi_Dua_Khen_Thuong.docx", ext: "docx", size: "1.0 MB" } 
   }
 ];
 
