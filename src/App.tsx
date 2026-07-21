@@ -519,7 +519,7 @@ export default function App() {
       />
 
       {/* Main Grid Layout */}
-      <div className="max-w-7xl w-full mx-auto px-4 py-6 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="max-w-[1791px] w-full mx-auto px-4 py-6 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Navigation Rail / Sidebar */}
         <div className="lg:col-span-3 md:col-span-12 h-fit">
           <PortalSidebar

@@ -16,6 +16,7 @@ import {
   User as UserIcon
 } from 'lucide-react';
 import { User, UserRole, SchoolSetting } from '../types';
+import SmartMediaView from './SmartMediaView';
 
 interface PortalHeaderProps {
   currentUser: User | null;
@@ -255,7 +256,7 @@ export default function PortalHeader({
       {/* Visual Header Banner */}
       <header 
         style={headerStyle}
-        className="text-white shadow-xl relative overflow-hidden border-b-4 border-brandOrange"
+        className="text-white shadow-xl relative overflow-hidden border-b-4 border-brandOrange max-w-[1791px] mx-auto w-full md:h-[500px] flex flex-col justify-center md:rounded-b-[32px]"
       >
         <div className="absolute inset-0 opacity-10 pointer-events-none">
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
@@ -268,10 +269,10 @@ export default function PortalHeader({
           </svg>
         </div>
         
-        <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
-          <div className="flex items-center gap-4">
+        <div className="max-w-[1791px] w-full mx-auto px-8 md:px-12 py-8 flex flex-col md:flex-row items-center justify-between gap-8 relative z-10 h-full">
+          <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
             {/* School Emblem Emblem SVG */}
-            <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-2xl shadow-lg p-2 flex items-center justify-center border-2 border-brandOrange/50 transform hover:scale-105 transition-transform duration-300">
+            <div className="w-20 h-20 md:w-32 md:h-32 bg-white rounded-3xl shadow-xl p-3 flex items-center justify-center border-2 border-brandOrange/50 transform hover:scale-105 transition-transform duration-300 shrink-0">
               <svg className="w-full h-full text-brandBlue" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M50 5L15 25V55C15 72.5 50 90 50 90C50 90 85 72.5 85 55V25L50 5Z" fill="#1e3a8a" stroke="#ea580c" stroke-width="4"/>
                 <path d="M30 45L50 30L70 45V65C70 70 50 80 50 80C50 80 30 70 30 65V45Z" fill="#ea580c"/>
@@ -281,32 +282,30 @@ export default function PortalHeader({
               </svg>
             </div>
             
-            <div className="text-center md:text-left">
-              <h1 className="text-xl md:text-2xl lg:text-3xl font-extrabold tracking-tight uppercase bg-clip-text text-transparent bg-gradient-to-r from-white via-orange-100 to-white">
+            <div className="text-center md:text-left space-y-2">
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight uppercase bg-clip-text text-transparent bg-gradient-to-r from-white via-orange-100 to-white leading-tight drop-shadow">
                 Trường THCS Hòa Phú
               </h1>
-              <p className="text-[11px] md:text-xs text-orange-300 font-bold tracking-wider mt-1 uppercase flex items-center justify-center md:justify-start gap-1">
-                <GraduationCap className="w-3.5 h-3.5" /> CỔNG THÔNG TIN ĐIỆN TỬ & CHUYỂN ĐỔI SỐ
+              <p className="text-xs md:text-sm text-orange-300 font-extrabold tracking-widest uppercase flex items-center justify-center md:justify-start gap-1.5 drop-shadow">
+                <GraduationCap className="w-4 h-4 text-brandOrange-light" /> CỔNG THÔNG TIN ĐIỆN TỬ & CHUYỂN ĐỔI SỐ
               </p>
-              <p className="text-[10px] md:text-xs text-slate-300 font-medium tracking-wide mt-0.5">
-                <MapPin className="w-3 h-3 inline mr-1 text-brandOrange-light" /> Địa chỉ: Xã Hòa Xá, Thành phố Hà Nội.
+              <p className="text-xs md:text-sm text-slate-300 font-semibold tracking-wide flex items-center justify-center md:justify-start gap-1">
+                <MapPin className="w-3.5 h-3.5 text-brandOrange-light" /> Địa chỉ: Xã Hòa Xá, Thành phố Hà Nội.
               </p>
             </div>
           </div>
 
           {/* Featured Image Frame on the top right of Hero Banner */}
           {featuredImage && (
-            <div className="hidden md:block w-52 h-24 bg-white/10 border border-white/20 rounded-2xl overflow-hidden shadow-inner relative group cursor-pointer transition-all hover:border-white/40">
-              <img 
-                src={featuredImage} 
+            <div className="hidden md:block w-full max-w-[705px] h-[365px] bg-white/10 border-2 border-white/30 rounded-[28px] overflow-hidden shadow-2xl relative group cursor-pointer transition-all hover:border-white/50 shrink-0">
+              <SmartMediaView 
+                url={featuredImage} 
                 alt="Ảnh nổi bật" 
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                onError={(e) => {
-                  (e.target as any).src = 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=400';
-                }}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                fallbackUrl="https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=800"
               />
-              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-1 px-2.5 text-left">
-                <span className="text-[9px] font-black text-amber-300 tracking-wide uppercase">Ảnh Nổi Bật Trường</span>
+              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-4 px-6 text-left">
+                <span className="text-xs font-black text-amber-300 tracking-widest uppercase">Ảnh Nổi Bật Trường</span>
               </div>
             </div>
           )}
@@ -315,7 +314,7 @@ export default function PortalHeader({
 
       {/* Navigation Sub-bar */}
       <nav className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-md">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between py-2 md:py-0">
+        <div className="max-w-[1791px] mx-auto px-6 flex flex-col md:flex-row items-center justify-between py-2 md:py-0">
           <div className="flex flex-wrap gap-1 py-1 font-bold text-xs md:text-sm text-brandBlue">
             <div className="px-4 py-3 bg-blue-50/50 border-b-4 border-brandBlue flex items-center gap-2">
               <GraduationCap className="w-4 h-4" /> Cổng Học Tập Trực Tuyến THCS Hòa Phú
@@ -382,7 +381,7 @@ export default function PortalHeader({
 
       {/* Marquee & Live Clock Bar */}
       <div className="bg-brandOrange text-white py-2 px-4 shadow-inner text-xs font-bold border-b border-orange-700">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+        <div className="max-w-[1791px] mx-auto flex items-center justify-between gap-4">
           <div className="whitespace-nowrap flex items-center gap-1.5 shrink-0 bg-orange-950/40 px-3.5 py-1 rounded-full shadow-sm border border-orange-400/30">
             <Clock className="w-3.5 h-3.5 animate-pulse text-orange-200" />
             <span className="font-mono text-[11px]">{timeStr}</span>
