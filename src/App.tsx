@@ -15,6 +15,7 @@ import PortalHeader from './components/PortalHeader';
 import PortalSidebar from './components/PortalSidebar';
 import PortalOverview from './components/PortalOverview';
 import PortalRightNavBanner from './components/PortalRightNavBanner';
+import PortalMySubmissions from './components/PortalMySubmissions';
 
 import { 
   ClassDetailView, 
