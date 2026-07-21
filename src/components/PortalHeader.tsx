@@ -56,6 +56,7 @@ export default function PortalHeader({
   const [regName, setRegName] = useState('');
   const [regUsername, setRegUsername] = useState('');
   const [regPassword, setRegPassword] = useState('');
+  const [showRegPassword, setShowRegPassword] = useState(false);
   const [regRole, setRegRole] = useState<UserRole>('Học sinh');
   const [regExtra, setRegExtra] = useState('');
   const [regError, setRegError] = useState('');
@@ -66,6 +67,9 @@ export default function PortalHeader({
   const [oldPass, setOldPass] = useState('');
   const [newPass, setNewPass] = useState('');
   const [confirmPass, setConfirmPass] = useState('');
+  const [showOldPass, setShowOldPass] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [changePassError, setChangePassError] = useState('');
 
   // Password rules validation
@@ -556,14 +560,23 @@ export default function PortalHeader({
 
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Mật khẩu bảo mật</label>
-                  <input 
-                    type="password" 
-                    value={regPassword}
-                    onChange={(e) => setRegPassword(e.target.value)}
-                    placeholder="Nhập mật khẩu an toàn"
-                    className="w-full text-xs p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 focus:bg-white font-mono"
-                    required
-                  />
+                  <div className="relative">
+                    <input 
+                      type={showRegPassword ? 'text' : 'password'} 
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      placeholder="Nhập mật khẩu an toàn"
+                      className="w-full text-xs p-2.5 pr-10 border rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 focus:bg-white font-mono"
+                      required
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setShowRegPassword(!showRegPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                   <p className="text-[9px] text-slate-400 mt-1 italic leading-relaxed">
                     Yêu cầu: Độ dài tối thiểu 6 ký tự, bao gồm ít nhất 1 chữ hoa, 1 chữ số, và 1 ký tự đặc biệt.
                   </p>
@@ -737,38 +750,65 @@ export default function PortalHeader({
               <form onSubmit={handleChangePassSubmit} className="space-y-3.5 text-xs">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Mật khẩu hiện tại</label>
-                  <input 
-                    type="password" 
-                    value={oldPass}
-                    onChange={(e) => setOldPass(e.target.value)}
-                    placeholder="Mật khẩu cũ của bạn (mặc định: 123)"
-                    className="w-full text-xs p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-brandBlue bg-slate-50 font-mono"
-                    required
-                  />
+                  <div className="relative">
+                    <input 
+                      type={showOldPass ? 'text' : 'password'} 
+                      value={oldPass}
+                      onChange={(e) => setOldPass(e.target.value)}
+                      placeholder="Mật khẩu cũ của bạn (mặc định: 123)"
+                      className="w-full text-xs p-2.5 pr-10 border rounded-xl outline-none focus:ring-2 focus:ring-brandBlue bg-slate-50 font-mono"
+                      required
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setShowOldPass(!showOldPass)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showOldPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Mật khẩu mới</label>
-                  <input 
-                    type="password" 
-                    value={newPass}
-                    onChange={(e) => setNewPass(e.target.value)}
-                    placeholder="Nhập mật khẩu mới an toàn"
-                    className="w-full text-xs p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-brandBlue bg-slate-50 font-mono"
-                    required
-                  />
+                  <div className="relative">
+                    <input 
+                      type={showNewPass ? 'text' : 'password'} 
+                      value={newPass}
+                      onChange={(e) => setNewPass(e.target.value)}
+                      placeholder="Nhập mật khẩu mới an toàn"
+                      className="w-full text-xs p-2.5 pr-10 border rounded-xl outline-none focus:ring-2 focus:ring-brandBlue bg-slate-50 font-mono"
+                      required
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setShowNewPass(!showNewPass)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Xác nhận lại mật khẩu mới</label>
-                  <input 
-                    type="password" 
-                    value={confirmPass}
-                    onChange={(e) => setConfirmPass(e.target.value)}
-                    placeholder="Nhập lại chính xác mật khẩu mới"
-                    className="w-full text-xs p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-brandBlue bg-slate-50 font-mono"
-                    required
-                  />
+                  <div className="relative">
+                    <input 
+                      type={showConfirmPass ? 'text' : 'password'} 
+                      value={confirmPass}
+                      onChange={(e) => setConfirmPass(e.target.value)}
+                      placeholder="Nhập lại chính xác mật khẩu mới"
+                      className="w-full text-xs p-2.5 pr-10 border rounded-xl outline-none focus:ring-2 focus:ring-brandBlue bg-slate-50 font-mono"
+                      required
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setShowConfirmPass(!showConfirmPass)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showConfirmPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Password Strength Checklist */}
