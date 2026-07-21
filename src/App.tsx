@@ -625,8 +625,9 @@ export default function App() {
             currentUser={currentUser}
             currentTab={currentTab}
             onChangeTab={(tab) => {
-              if (tab === 'accounts' && currentUser?.role !== 'Admin') {
-                showToast("⚠️ Nhắc nhở: Phân hệ Quản lý tài khoản chỉ dành riêng cho Quản trị viên hệ thống!", "error");
+              const restrictedTabs = ['accounts', 'classes', 'grading', 'reports', 'export-center', 'supabase-sync'];
+              if (restrictedTabs.includes(tab) && currentUser?.role !== 'Admin') {
+                showToast("⚠️ Cảnh báo: Phân hệ học vụ chứa điểm số hoặc mật khẩu học sinh chỉ dành riêng cho Admin trường!", "error");
                 return;
               }
               // Map virtual sidebar IDs to matching state-rendering tabs

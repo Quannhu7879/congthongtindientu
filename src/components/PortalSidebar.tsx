@@ -58,8 +58,16 @@ const menuItems: MenuItem[] = [
 export default function PortalSidebar({ currentTab, onChangeTab, currentUser }: SidebarProps) {
   const userRole = currentUser ? currentUser.role : null;
 
-  // Show all menu items to allow users to view/navigate the entire website
-  const visibleItems = menuItems;
+  // Filter menu items for non-admin roles: menus with grades, student accounts, and passwords are hidden
+  const visibleItems = menuItems.filter(item => {
+    if (currentUser?.role !== 'Admin') {
+      const restrictedIds = ['accounts', 'classes', 'grading', 'reports', 'export-center', 'supabase-sync'];
+      if (restrictedIds.includes(item.id)) {
+        return false;
+      }
+    }
+    return true;
+  });
 
   return (
     <aside className="flex flex-col gap-4">
