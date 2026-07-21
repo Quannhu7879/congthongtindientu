@@ -376,11 +376,13 @@ export async function saveSupabaseData<T extends { id: any }>(tableName: string,
         continue;
       }
       
-      // Look for a column name in the error message, typically in quotes or mentioned after "column"
+      // Look for a column name in the error message, typically in quotes or mentioned before/after "column"
       let matchedColumn: string | null = null;
       
       const columnMatch = errMsg.match(/column "([^"]+)"/i) || 
                           errMsg.match(/column '([^']+)'/i) ||
+                          errMsg.match(/'([^']+)' column/i) ||
+                          errMsg.match(/"([^"]+)" column/i) ||
                           errMsg.match(/header "([^"]+)"/i) ||
                           errMsg.match(/column ([a-zA-Z0-9_]+)/i);
 
