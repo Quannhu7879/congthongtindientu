@@ -1003,20 +1003,24 @@ export default function PortalOverview({
   return (
     <section className="col-span-1 lg:col-span-6 flex flex-col gap-6 animate-fade-in">
       {/* Welcome Banner */}
-      {currentUser?.role === 'Admin' && (
-        <div className="flex justify-between items-center bg-slate-800 text-white p-3 rounded-2xl shadow-sm border border-slate-700">
-          <span className="text-xs font-black tracking-wide uppercase flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-            Chế độ quản trị viên hệ thống
-          </span>
-          <button
-            onClick={() => setShowAdminSettings(!showAdminSettings)}
-            className="p-1.5 px-3 bg-brandOrange hover:bg-orange-600 rounded-lg text-[10px] font-black tracking-wider uppercase transition cursor-pointer active:scale-95 shadow"
-          >
-            {showAdminSettings ? 'Đóng cấu hình' : '⚙️ Quản Trị Banner & Chữ Chạy'}
-          </button>
-        </div>
-      )}
+      <div className="flex justify-between items-center bg-slate-800 text-white p-3 rounded-2xl shadow-sm border border-slate-700">
+        <span className="text-xs font-black tracking-wide uppercase flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+          {currentUser?.role === 'Admin' ? 'Chế độ quản trị viên hệ thống' : 'Quản trị giao diện thông tin'}
+        </span>
+        <button
+          onClick={() => {
+            if (currentUser?.role !== 'Admin') {
+              showToast("⚠️ Nhắc nhở: Quyền hạn Quản trị Banner & Chữ chạy chỉ dành riêng cho Admin của trường!", "error");
+              return;
+            }
+            setShowAdminSettings(!showAdminSettings);
+          }}
+          className="p-1.5 px-3 bg-brandOrange hover:bg-orange-600 rounded-lg text-[10px] font-black tracking-wider uppercase transition cursor-pointer active:scale-95 shadow"
+        >
+          {showAdminSettings ? 'Đóng cấu hình' : '⚙️ Quản Trị Banner & Chữ Chạy'}
+        </button>
+      </div>
 
       {/* Admin settings slide board */}
       {currentUser?.role === 'Admin' && showAdminSettings && (

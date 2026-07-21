@@ -58,12 +58,8 @@ const menuItems: MenuItem[] = [
 export default function PortalSidebar({ currentTab, onChangeTab, currentUser }: SidebarProps) {
   const userRole = currentUser ? currentUser.role : null;
 
-  // Filter menu items by user role permissions
-  const visibleItems = menuItems.filter(item => {
-    if (item.allowedRoles.includes('all')) return true;
-    if (!userRole) return false;
-    return item.allowedRoles.includes(userRole);
-  });
+  // Show all menu items to allow users to view/navigate the entire website
+  const visibleItems = menuItems;
 
   return (
     <aside className="flex flex-col gap-4">

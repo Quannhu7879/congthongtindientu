@@ -526,6 +526,10 @@ export default function App() {
             currentUser={currentUser}
             currentTab={currentTab}
             onChangeTab={(tab) => {
+              if (tab === 'accounts' && currentUser?.role !== 'Admin') {
+                showToast("⚠️ Nhắc nhở: Phân hệ Quản lý tài khoản chỉ dành riêng cho Quản trị viên hệ thống!", "error");
+                return;
+              }
               // Map virtual sidebar IDs to matching state-rendering tabs
               const idMapping: Record<string, string> = {
                 'subjects': 'assignments',
