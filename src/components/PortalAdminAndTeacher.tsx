@@ -18,7 +18,12 @@ import {
   X,
   PlusCircle,
   Eye,
-  CornerDownRight
+  CornerDownRight,
+  RefreshCw,
+  UserCheck,
+  UserPlus,
+  AlertTriangle,
+  Sparkles
 } from 'lucide-react';
 import { 
   User, 
@@ -372,6 +377,7 @@ interface ClassStructureProps {
   classes: ClassItem[];
   onSaveClasses: (list: ClassItem[]) => void;
   accounts: User[];
+  onSaveAccounts?: (list: User[]) => void;
   showToast: (msg: string, type?: 'success' | 'info' | 'error') => void;
 }
 
@@ -379,12 +385,18 @@ export function PortalClassStructure({
   classes,
   onSaveClasses,
   accounts,
+  onSaveAccounts,
   showToast
 }: ClassStructureProps) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [khoi, setKhoi] = useState('6');
   const [lop, setLop] = useState('');
   const [gvcn, setGvcn] = useState('');
+
+  // Sync / Class detail states
+  const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
+  const [newStudentName, setNewStudentName] = useState('');
+  const [newStudentUsername, setNewStudentUsername] = useState('');
 
   const openModal = () => {
     const teachers = accounts.filter(a => a.role === 'Giáo viên');
@@ -420,32 +432,200 @@ export function PortalClassStructure({
     showToast(`Đã thêm lớp ${className} thành công!`, "success");
   };
 
+  // Sync Class size to match the number of student accounts
+  const handleSyncClassSize = (classId: string, actualCount: number) => {
+    const updated = classes.map(c => {
+      if (c.id === classId) {
+        return { ...c, total: actualCount };
+      }
+      return c;
+    });
+    onSaveClasses(updated);
+
+    if (selectedClass && selectedClass.id === classId) {
+      setSelectedClass({ ...selectedClass, total: actualCount });
+    }
+
+    showToast(`Đồng bộ sĩ số lớp ${classId} thành ${actualCount} thành công!`, "success");
+  };
+
+  // Sync all classes with actual accounts in system
+  const handleSyncAllClasses = () => {
+    const updated = classes.map(c => {
+      const actualCount = accounts.filter(a => a.role === 'Học sinh' && a.extra === c.lop).length;
+      return { ...c, total: actualCount };
+    });
+    onSaveClasses(updated);
+    showToast("Đã quét và đồng bộ sĩ số danh nghĩa với số lượng tài khoản thực tế cho toàn bộ các lớp!", "success");
+  };
+
+  // Auto generate 10 mock student accounts for a class
+  const handleAutoGenerateStudents = (className: string) => {
+    const sampleNames = [
+      "Nguyễn Văn Minh", "Trần Thị Hồng", "Lê Hoàng Đức", "Phạm Hải Yến",
+      "Vũ Quốc Khánh", "Nguyễn Thu Trang", "Đỗ Bảo Long", "Phan Thanh Trúc",
+      "Hoàng Gia Huy", "Ngô Quỳnh Anh", "Lý Hoài Nam", "Dương Cẩm Tú",
+      "Đặng Văn Hùng", "Bùi Mai Chi", "Trịnh Xuân Đạt", "Võ Mỹ Linh"
+    ];
+
+    const currentClassStudents = accounts.filter(a => a.role === 'Học sinh' && a.extra === className);
+    const existingIndex = currentClassStudents.length;
+
+    const generatedAccounts: User[] = [];
+    const prefix = className.toLowerCase();
+
+    for (let i = 0; i < 8; i++) {
+      const studentName = sampleNames[(existingIndex + i) % sampleNames.length];
+      const username = `${prefix}_hs${existingIndex + i + 1}`;
+
+      if (accounts.some(a => a.username === username)) {
+        continue;
+      }
+
+      generatedAccounts.push({
+        id: Date.now() + i,
+        name: studentName,
+        username: username,
+        password: '123',
+        role: 'Học sinh',
+        extra: className,
+        isFirstLogin: true,
+        canPostNews: false
+      });
+    }
+
+    if (generatedAccounts.length === 0) {
+      showToast("Không thể tạo thêm tài khoản học sinh tự động (trùng tên đăng nhập)!", "error");
+      return;
+    }
+
+    if (onSaveAccounts) {
+      onSaveAccounts([...accounts, ...generatedAccounts]);
+      showToast(`Đã tự động tạo và cấp ${generatedAccounts.length} tài khoản học sinh mẫu cho lớp ${className}!`, "success");
+    } else {
+      showToast("Chức năng đồng bộ tài khoản chưa khả dụng!", "error");
+    }
+  };
+
+  // Add a single student manually
+  const handleAddSingleStudent = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedClass) return;
+    if (!newStudentName.trim() || !newStudentUsername.trim()) {
+      showToast("Vui lòng nhập Họ tên và Tên đăng nhập học sinh!", "error");
+      return;
+    }
+
+    const username = newStudentUsername.trim().toLowerCase().replace(/\s+/g, '');
+    if (accounts.some(a => a.username === username)) {
+      showToast("Tên tài khoản này đã tồn tại trong hệ thống!", "error");
+      return;
+    }
+
+    const newStudent: User = {
+      id: Date.now(),
+      name: newStudentName.trim(),
+      username: username,
+      password: '123',
+      role: 'Học sinh',
+      extra: selectedClass.lop,
+      isFirstLogin: true,
+      canPostNews: false
+    };
+
+    if (onSaveAccounts) {
+      onSaveAccounts([...accounts, newStudent]);
+      setNewStudentName('');
+      setNewStudentUsername('');
+      showToast(`Cấp tài khoản cho học sinh ${newStudent.name} thành công!`, "success");
+    } else {
+      showToast("Chức năng đồng bộ tài khoản chưa khả dụng!", "error");
+    }
+  };
+
+  // Delete a student account
+  const handleDeleteStudent = (id: number) => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa tài khoản học sinh này?")) {
+      if (onSaveAccounts) {
+        onSaveAccounts(accounts.filter(a => a.id !== id));
+        showToast("Đã xóa tài khoản học sinh thành công!", "success");
+      }
+    }
+  };
+
   return (
     <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-xs animate-fade-in">
-      <div className="flex justify-between items-center border-b pb-3 mb-4">
-        <h3 className="font-extrabold text-sm text-slate-800 flex items-center gap-2">
-          <School className="w-5 h-5 text-brandBlue" /> Cơ cấu Khối / Lớp học trực thuộc nhà trường
-        </h3>
+      <div className="flex flex-col sm:flex-row gap-3 justify-between sm:items-center border-b pb-4 mb-4">
+        <div>
+          <h3 className="font-extrabold text-sm text-slate-800 flex items-center gap-2">
+            <School className="w-5 h-5 text-brandBlue" /> Cơ cấu Khối / Lớp học trực thuộc nhà trường
+          </h3>
+          <p className="text-[10px] text-slate-500 mt-0.5">
+            Kích chuột vào từng thẻ lớp để xem, quản lý danh sách học sinh và đồng bộ tài khoản.
+          </p>
+        </div>
         
-        <button 
-          onClick={openModal}
-          className="bg-brandOrange hover:bg-brandOrange-dark text-white text-xs px-4 py-1.5 rounded-lg font-bold shadow cursor-pointer"
-        >
-          Thêm Lớp Mới
-        </button>
+        <div className="flex gap-2 shrink-0">
+          <button 
+            onClick={handleSyncAllClasses}
+            className="border border-slate-200 hover:border-indigo-200 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 text-xs px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition cursor-pointer"
+            title="Đồng bộ sĩ số tất cả các lớp dựa theo số tài khoản thực tế"
+          >
+            <RefreshCw className="w-3.5 h-3.5 animate-spin-slow" />
+            Đồng bộ toàn bộ sĩ số
+          </button>
+
+          <button 
+            onClick={openModal}
+            className="bg-brandOrange hover:bg-brandOrange-dark text-white text-xs px-4 py-1.5 rounded-lg font-bold shadow transition cursor-pointer"
+          >
+            Thêm Lớp Mới
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {classes.map(c => (
-          <div key={c.id} className="bg-slate-50 p-4 border border-slate-200 rounded-2xl relative shadow-sm font-semibold">
-            <b className="text-brandBlue text-sm block border-b pb-1.5 mb-1.5">Lớp {c.lop}</b>
-            <span className="text-[10px] text-slate-500 block"><b>GVCN:</b> {c.gvcn}</span>
-            <span className="text-[10px] text-slate-500 block"><b>Sĩ số:</b> {c.total} học sinh chính thức</span>
-          </div>
-        ))}
+        {classes.map(c => {
+          // Count active accounts for this class
+          const actualStudentCount = accounts.filter(a => a.role === 'Học sinh' && a.extra === c.lop).length;
+          const isSynced = c.total === actualStudentCount;
+
+          return (
+            <div 
+              key={c.id} 
+              onClick={() => setSelectedClass(c)}
+              className="bg-slate-50 hover:bg-white p-4 border border-slate-200 hover:border-brandOrange hover:shadow-md rounded-2xl relative shadow-sm font-semibold transition-all duration-300 cursor-pointer group flex flex-col justify-between min-h-[110px]"
+            >
+              <div>
+                <div className="flex justify-between items-center border-b pb-1.5 mb-1.5">
+                  <b className="text-brandBlue group-hover:text-brandOrange text-sm block transition-colors">Lớp {c.lop}</b>
+                  <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase ${
+                    isSynced ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                  }`} title={isSynced ? "Sĩ số đã đồng bộ" : "Sĩ số lệch danh nghĩa"}>
+                    {isSynced ? "Khớp" : "Lệch"}
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-500 block mb-1">
+                  <b>GVCN:</b> {c.gvcn}
+                </span>
+                <span className="text-[10px] text-slate-500 block">
+                  <b>Sĩ số:</b> {c.total} học sinh
+                </span>
+                <span className="text-[10px] text-slate-400 font-medium block mt-1 flex items-center gap-1">
+                  <Users className="w-3 h-3 text-slate-400" />
+                  Đã cấp: <b>{actualStudentCount} tài khoản</b>
+                </span>
+              </div>
+              
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-brandOrange flex items-center gap-1 text-[9px] font-bold mt-2 self-end">
+                <span>Quản lý &amp; Đồng bộ</span> &rarr;
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Add Modal */}
+      {/* Add Class Modal */}
       {showAddModal && (
         <div 
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in"
@@ -468,7 +648,7 @@ export function PortalClassStructure({
                 <select
                   value={khoi}
                   onChange={(e) => setKhoi(e.target.value)}
-                  className="w-full text-xs p-2.5 border rounded-lg bg-white cursor-pointer"
+                  className="w-full text-xs p-2.5 border rounded-lg bg-white cursor-pointer font-bold"
                 >
                   <option value="6">Khối 6</option>
                   <option value="7">Khối 7</option>
@@ -494,7 +674,7 @@ export function PortalClassStructure({
                 <select
                   value={gvcn}
                   onChange={(e) => setGvcn(e.target.value)}
-                  className="w-full text-xs p-2.5 border rounded-lg bg-white cursor-pointer"
+                  className="w-full text-xs p-2.5 border rounded-lg bg-white cursor-pointer font-bold"
                 >
                   {accounts.filter(a => a.role === 'Giáo viên').map(t => (
                     <option key={t.id} value={t.name}>{t.name} ({t.extra})</option>
@@ -512,6 +692,181 @@ export function PortalClassStructure({
           </div>
         </div>
       )}
+
+      {/* Class Detail & Student Sync Modal */}
+      <AnimatePresence>
+        {selectedClass && (() => {
+          const classStudents = accounts.filter(a => a.role === 'Học sinh' && a.extra === selectedClass.lop);
+          const isSynced = selectedClass.total === classStudents.length;
+
+          return (
+            <div 
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in"
+              onClick={() => setSelectedClass(null)}
+            >
+              <motion.div 
+                className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 font-semibold text-slate-600 max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+              >
+                <div className="flex justify-between items-center border-b pb-3.5 mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-xl bg-orange-50 text-brandOrange flex items-center justify-center border border-orange-100">
+                      <School className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-sm text-slate-800">Thông Tin &amp; Đồng Bộ Lớp {selectedClass.lop}</h4>
+                      <p className="text-[10px] text-slate-500 font-medium">GVCN: {selectedClass.gvcn} • Sĩ số khai báo: {selectedClass.total} học sinh</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedClass(null)} 
+                    className="text-slate-400 hover:text-slate-600 transition"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Synchronization Status Box */}
+                <div className={`p-4 rounded-2xl border mb-4 text-xs ${
+                  isSynced 
+                    ? 'bg-emerald-50/70 border-emerald-100 text-emerald-800' 
+                    : 'bg-amber-50/70 border-amber-100 text-amber-800'
+                }`}>
+                  <div className="flex justify-between items-start gap-3">
+                    <div className="flex gap-2">
+                      {isSynced ? (
+                        <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      ) : (
+                        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      )}
+                      <div>
+                        <span className="font-extrabold text-xs block">
+                          {isSynced ? "Đã đồng bộ hoàn hảo!" : "Phát hiện lệch sĩ số!"}
+                        </span>
+                        <span className="text-[10px] leading-normal font-medium mt-1 block">
+                          {isSynced 
+                            ? `Sĩ số danh nghĩa của lớp (${selectedClass.total}) trùng khớp chính xác với số lượng tài khoản học sinh đã cấp thực tế trên hệ thống.`
+                            : `Sĩ số danh nghĩa là ${selectedClass.total}, nhưng chỉ có ${classStudents.length} tài khoản học sinh tương ứng. Vui lòng nhấn nút bên cạnh để đồng bộ.`
+                          }
+                        </span>
+                      </div>
+                    </div>
+
+                    {!isSynced && (
+                      <button
+                        onClick={() => handleSyncClassSize(selectedClass.id, classStudents.length)}
+                        className="bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-black px-2.5 py-1.5 rounded-lg shadow-sm shrink-0 flex items-center gap-1 transition"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        Đồng bộ ngay
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Subtitle / Tools */}
+                <div className="flex justify-between items-center mb-2.5 mt-1">
+                  <span className="font-extrabold text-xs text-slate-800 flex items-center gap-1">
+                    <Users className="w-4 h-4 text-brandBlue" />
+                    Tài khoản học sinh trực thuộc ({classStudents.length})
+                  </span>
+                  
+                  <button
+                    type="button"
+                    onClick={() => handleAutoGenerateStudents(selectedClass.lop)}
+                    className="text-brandBlue hover:text-brandBlue-dark text-[10px] font-bold flex items-center gap-1 hover:underline transition"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-brandOrange animate-pulse" />
+                    Cấp nhanh 8 tài khoản mẫu
+                  </button>
+                </div>
+
+                {/* Student list */}
+                <div className="border border-slate-100 rounded-xl max-h-56 overflow-y-auto custom-scrollbar mb-4 bg-slate-50/50">
+                  {classStudents.length === 0 ? (
+                    <div className="p-8 text-center text-slate-400 font-medium">
+                      Chưa có tài khoản học sinh nào được cấp cho lớp này.
+                    </div>
+                  ) : (
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-100/80 text-slate-500 font-bold uppercase text-[9px] border-b border-slate-200">
+                          <th className="p-2.5">Họ và tên</th>
+                          <th className="p-2.5">Tên đăng nhập</th>
+                          <th className="p-2.5">Trạng thái</th>
+                          <th className="p-2.5 text-right">Tác vụ</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-slate-700">
+                        {classStudents.map(student => (
+                          <tr key={student.id} className="hover:bg-slate-100/50 transition">
+                            <td className="p-2.5 font-extrabold text-slate-800">{student.name}</td>
+                            <td className="p-2.5 font-mono text-[10px] text-slate-500">{student.username}</td>
+                            <td className="p-2.5">
+                              <span className="inline-flex items-center gap-1 text-[9px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded-full border border-emerald-100 font-black">
+                                <span className="w-1 h-1 bg-emerald-500 rounded-full animate-ping"></span>
+                                Hoạt động
+                              </span>
+                            </td>
+                            <td className="p-2.5 text-right">
+                              <button
+                                onClick={() => handleDeleteStudent(student.id)}
+                                className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-1.5 rounded transition"
+                                title="Xóa tài khoản học sinh"
+                              >
+                                <Trash className="w-3.5 h-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+
+                {/* Add student inline form */}
+                <div className="border-t pt-4">
+                  <h5 className="font-extrabold text-xs text-slate-800 mb-2 flex items-center gap-1">
+                    <UserPlus className="w-4 h-4 text-emerald-600" />
+                    Cấp tài khoản lẻ cho lớp {selectedClass.lop}
+                  </h5>
+
+                  <form onSubmit={handleAddSingleStudent} className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div>
+                      <input
+                        type="text"
+                        value={newStudentName}
+                        onChange={(e) => setNewStudentName(e.target.value)}
+                        placeholder="Họ và tên học sinh"
+                        className="w-full text-xs p-2 border border-slate-200 rounded-lg outline-none font-bold placeholder:font-normal"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        value={newStudentUsername}
+                        onChange={(e) => setNewStudentUsername(e.target.value)}
+                        placeholder="Tên đăng nhập (ví dụ: hs_9a_an)"
+                        className="w-full text-xs p-2 border border-slate-200 rounded-lg outline-none font-mono text-[11px] placeholder:font-normal"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 px-3 rounded-lg shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Cấp tài khoản
+                    </button>
+                  </form>
+                </div>
+              </motion.div>
+            </div>
+          );
+        })()}
+      </AnimatePresence>
     </div>
   );
 }

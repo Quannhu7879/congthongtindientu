@@ -382,6 +382,7 @@ export default function App() {
             classes={classes}
             onSaveClasses={handleSaveClasses}
             accounts={accounts}
+            onSaveAccounts={handleSaveAccounts}
             showToast={showToast}
           />
         );
