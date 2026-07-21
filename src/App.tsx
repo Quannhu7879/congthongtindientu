@@ -625,7 +625,7 @@ export default function App() {
             currentUser={currentUser}
             currentTab={currentTab}
             onChangeTab={(tab) => {
-              const restrictedTabs = ['accounts', 'classes', 'grading', 'reports', 'export-center', 'supabase-sync'];
+              const restrictedTabs = ['accounts', 'classes', 'subjects', 'grading', 'reports', 'export-center', 'supabase-sync'];
               if (restrictedTabs.includes(tab) && currentUser?.role !== 'Admin') {
                 showToast("⚠️ Cảnh báo: Phân hệ học vụ chứa điểm số hoặc mật khẩu học sinh chỉ dành riêng cho Admin trường!", "error");
                 return;

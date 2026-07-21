@@ -61,7 +61,7 @@ export default function PortalSidebar({ currentTab, onChangeTab, currentUser }: 
   // Filter menu items for non-admin roles: menus with grades, student accounts, and passwords are hidden
   const visibleItems = menuItems.filter(item => {
     if (currentUser?.role !== 'Admin') {
-      const restrictedIds = ['accounts', 'classes', 'grading', 'reports', 'export-center', 'supabase-sync'];
+      const restrictedIds = ['accounts', 'classes', 'subjects', 'grading', 'reports', 'export-center', 'supabase-sync'];
       if (restrictedIds.includes(item.id)) {
         return false;
       }
