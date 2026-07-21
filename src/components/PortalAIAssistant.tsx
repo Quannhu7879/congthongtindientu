@@ -112,7 +112,14 @@ export default function PortalAIAssistant({ currentUser }: PortalAIAssistantProp
       });
 
       if (!response.ok) {
-        throw new Error(`Mã lỗi máy chủ: ${response.status}`);
+        let serverErr = `Mã lỗi máy chủ: ${response.status}`;
+        try {
+          const errData = await response.json();
+          if (errData && errData.error) {
+            serverErr = `${errData.error}${errData.details ? ` (${errData.details})` : ''}`;
+          }
+        } catch (_) {}
+        throw new Error(serverErr);
       }
 
       const data = await response.json();
@@ -127,7 +134,7 @@ export default function PortalAIAssistant({ currentUser }: PortalAIAssistantProp
       setMessages(prev => [...prev, assistantMessage]);
     } catch (err: any) {
       console.error("AI Error:", err);
-      setErrorMsg("Không thể kết nối với dịch vụ Trợ lý AI. Vui lòng kiểm tra lại kết nối mạng hoặc liên hệ quản trị viên.");
+      setErrorMsg(err.message || "Không thể kết nối với dịch vụ Trợ lý AI. Vui lòng kiểm tra lại kết nối mạng hoặc liên hệ quản trị viên.");
     } finally {
       setIsLoading(false);
     }
