@@ -11,7 +11,10 @@ import {
   Check, 
   Server,
   Play,
-  AlertTriangle
+  AlertTriangle,
+  Download,
+  UploadCloud,
+  FileCode
 } from 'lucide-react';
 import { 
   testSupabaseConnection, 
@@ -52,6 +55,20 @@ interface PortalSupabaseSyncProps {
   outstandingClasses: OutstandingClass[];
   settings?: SchoolSetting[];
   showToast: (msg: string, type?: 'success' | 'info' | 'error') => void;
+  onSaveAccounts: (list: User[]) => void;
+  onSaveClasses: (list: ClassItem[]) => void;
+  onSaveAssignments: (list: Assignment[]) => void;
+  onSaveRegistrations: (list: CourseRegistration[]) => void;
+  onSaveSurveys: (list: Survey[]) => void;
+  onSaveExams: (list: Exam[]) => void;
+  onSaveHomework: (list: Homework[]) => void;
+  onSaveSubmissions: (list: Submission[]) => void;
+  onSaveDocuments: (list: OfficialDocument[]) => void;
+  onSaveNotifications: (list: SchoolNotification[]) => void;
+  onSaveActivities: (list: Activity[]) => void;
+  onSaveOutstandingStudents: (list: OutstandingStudent[]) => void;
+  onSaveOutstandingClasses: (list: OutstandingClass[]) => void;
+  onSaveSettings: (list: SchoolSetting[]) => void;
 }
 
 export default function PortalSupabaseSync({
@@ -69,7 +86,21 @@ export default function PortalSupabaseSync({
   outstandingStudents,
   outstandingClasses,
   settings,
-  showToast
+  showToast,
+  onSaveAccounts,
+  onSaveClasses,
+  onSaveAssignments,
+  onSaveRegistrations,
+  onSaveSurveys,
+  onSaveExams,
+  onSaveHomework,
+  onSaveSubmissions,
+  onSaveDocuments,
+  onSaveNotifications,
+  onSaveActivities,
+  onSaveOutstandingStudents,
+  onSaveOutstandingClasses,
+  onSaveSettings
 }: PortalSupabaseSyncProps) {
   const [connStatus, setConnStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
   const [connMessage, setConnMessage] = useState('Đang kết nối tới Supabase...');
@@ -96,6 +127,154 @@ export default function PortalSupabaseSync({
   useEffect(() => {
     checkConnection();
   }, []);
+
+  // Backup all data as JSON file
+  const handleExportBackupJSON = () => {
+    try {
+      const allData = {
+        school_accounts: accounts,
+        school_classes: classes,
+        school_assignments: assignments,
+        school_course_registrations: registrations,
+        school_surveys: surveys,
+        school_exams: exams,
+        school_homework: homeworkList,
+        school_submissions: submissions,
+        school_documents: documents,
+        school_notifications: notifications,
+        school_activities: activities,
+        school_outstanding_students: outstandingStudents,
+        school_outstanding_classes: outstandingClasses,
+        school_settings: settings || []
+      };
+      
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allData, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `Sao_Luu_Du_Lieu_THCS_Hoa_Phu_${new Date().toISOString().split('T')[0]}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast("Tạo và tải file sao lưu dự phòng (.json) thành công!", "success");
+    } catch (err: any) {
+      showToast(`Không thể tạo file sao lưu: ${err.message || err}`, "error");
+    }
+  };
+
+  // Restore data from JSON backup file
+  const handleImportBackupJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const content = evt.target?.result as string;
+        const backupObj = JSON.parse(content);
+        
+        // Basic validation
+        const requiredTables = [
+          'school_accounts', 
+          'school_classes', 
+          'school_assignments', 
+          'school_homework', 
+          'school_submissions'
+        ];
+        
+        const hasRequired = requiredTables.every(t => Array.isArray(backupObj[t]));
+        if (!hasRequired) {
+          showToast("File sao lưu không đúng cấu trúc hoặc thiếu bảng dữ liệu cốt lõi!", "error");
+          return;
+        }
+
+        if (window.confirm("CẢNH BÁO: Thao tác này sẽ GHI ĐÈ toàn bộ dữ liệu hiện tại trong trình duyệt của bạn bằng dữ liệu từ file sao lưu. Bạn có muốn tiếp tục?")) {
+          // Restore locally
+          if (backupObj.school_accounts) onSaveAccounts(backupObj.school_accounts);
+          if (backupObj.school_classes) onSaveClasses(backupObj.school_classes);
+          if (backupObj.school_assignments) onSaveAssignments(backupObj.school_assignments);
+          if (backupObj.school_course_registrations) onSaveRegistrations(backupObj.school_course_registrations);
+          if (backupObj.school_surveys) onSaveSurveys(backupObj.school_surveys);
+          if (backupObj.school_exams) onSaveExams(backupObj.school_exams);
+          if (backupObj.school_homework) onSaveHomework(backupObj.school_homework);
+          if (backupObj.school_submissions) onSaveSubmissions(backupObj.school_submissions);
+          if (backupObj.school_documents) onSaveDocuments(backupObj.school_documents);
+          if (backupObj.school_notifications) onSaveNotifications(backupObj.school_notifications);
+          if (backupObj.school_activities) onSaveActivities(backupObj.school_activities);
+          if (backupObj.school_outstanding_students) onSaveOutstandingStudents(backupObj.school_outstanding_students);
+          if (backupObj.school_outstanding_classes) onSaveOutstandingClasses(backupObj.school_outstanding_classes);
+          if (backupObj.school_settings) onSaveSettings(backupObj.school_settings);
+
+          showToast("Khôi phục dữ liệu cục bộ (localStorage) thành công!", "success");
+
+          // Sync to Supabase if connected
+          if (connStatus === 'connected') {
+            showToast("Đang đồng bộ hóa dữ liệu vừa khôi phục lên đám mây Supabase...", "info");
+            const seedRes = await seedDefaultDataToSupabase({
+              school_accounts: backupObj.school_accounts || [],
+              school_classes: backupObj.school_classes || [],
+              school_assignments: backupObj.school_assignments || [],
+              school_course_registrations: backupObj.school_course_registrations || [],
+              school_surveys: backupObj.school_surveys || [],
+              school_exams: backupObj.school_exams || [],
+              school_homework: backupObj.school_homework || [],
+              school_submissions: backupObj.school_submissions || [],
+              school_documents: backupObj.school_documents || [],
+              school_notifications: backupObj.school_notifications || [],
+              school_activities: backupObj.school_activities || [],
+              school_outstanding_students: backupObj.school_outstanding_students || [],
+              school_outstanding_classes: backupObj.school_outstanding_classes || [],
+              school_settings: backupObj.school_settings || []
+            });
+            
+            if (seedRes.success) {
+              showToast("Đã đồng bộ hóa thành công toàn bộ dữ liệu khôi phục lên đám mây Supabase!", "success");
+            } else {
+              showToast(`Khôi phục cục bộ xong nhưng đồng bộ Supabase có lỗi: ${seedRes.message}`, "info");
+            }
+          } else {
+            showToast("Khôi phục thành công! Chú ý: Do chưa kết nối Supabase, dữ liệu chỉ được lưu trữ cục bộ trên trình duyệt này.", "info");
+          }
+        }
+      } catch (err: any) {
+        showToast("Lỗi khi đọc file sao lưu. File có thể bị hỏng hoặc sai định dạng JSON!", "error");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ''; // reset
+  };
+
+  // Export Static Code for GitHub/Vercel
+  const handleCopyTSData = () => {
+    try {
+      const allData = {
+        accounts,
+        classes,
+        assignments,
+        registrations,
+        surveys,
+        exams,
+        homeworkList,
+        submissions,
+        documents,
+        notifications,
+        activities,
+        outstandingStudents,
+        outstandingClasses,
+        settings: settings || []
+      };
+
+      const tsCode = `// BẢN SAO LƯU DỮ LIỆU TĨNH - COPY VÀO FILE src/data.ts ĐỂ LƯU LÊN GITHUB / VERCEL VĨNH VIỄN
+// Dán đè đoạn mã dưới đây vào file src/data.ts để biến dữ liệu hiện tại thành dữ liệu gốc ban đầu khi triển khai.
+
+export const staticBackupData = ${JSON.stringify(allData, null, 2)};
+`;
+
+      navigator.clipboard.writeText(tsCode);
+      showToast("Đã sao chép mã nguồn dữ liệu tĩnh (TypeScript) vào bộ nhớ tạm!", "success");
+    } catch (err: any) {
+      showToast("Lỗi khi tạo mã nguồn tĩnh!", "error");
+    }
+  };
 
   const handleCopySQL = () => {
     navigator.clipboard.writeText(SUPABASE_SQL_SCHEMA);
@@ -323,6 +502,75 @@ export default function PortalSupabaseSync({
         </div>
 
       </div>
+
+      {/* Backup and Restore / GitHub and Vercel section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
+        {/* Left Card: Backup / Restore JSON */}
+        <div className="border border-indigo-150 bg-indigo-50/30 rounded-xl p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600">
+              <Download className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-sm text-slate-800">Sao Lưu & Khôi Phục Dữ Liệu Offline</h3>
+              <p className="text-[10px] text-slate-500 font-medium">Bảo vệ dữ liệu không bao giờ lo bị mất do dọn cache hay dọn rác trình duyệt</p>
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-600 leading-relaxed font-medium">
+            Tải xuống một file sao lưu chứa toàn bộ tài khoản, lớp học, ngân hàng đề thi, và bài tập dưới dạng file JSON. Bạn có thể sử dụng file này để khôi phục lại trạng thái bất cứ lúc nào, trên bất kỳ thiết bị nào.
+          </p>
+
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <button
+              onClick={handleExportBackupJSON}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black shadow-sm transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Tải File Sao Lưu (.JSON)
+            </button>
+
+            <label className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-black shadow-sm transition flex items-center gap-1.5 cursor-pointer active:scale-95">
+              <UploadCloud className="w-3.5 h-3.5 text-slate-500" />
+              Khôi Phục Từ File
+              <input
+                type="file"
+                accept=".json"
+                onChange={handleImportBackupJSON}
+                className="hidden"
+              />
+            </label>
+          </div>
+        </div>
+
+        {/* Right Card: GitHub / Vercel export block */}
+        <div className="border border-amber-150 bg-amber-50/30 rounded-xl p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-amber-100 rounded-lg text-amber-700">
+              <FileCode className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-sm text-slate-800">Lưu Trữ Vĩnh Viễn Trên GitHub / Vercel</h3>
+              <p className="text-[10px] text-slate-500 font-medium">Tích hợp dữ liệu cập nhật trực tiếp vào mã nguồn tĩnh của bạn</p>
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-600 leading-relaxed font-medium">
+            Khi triển khai trên GitHub/Vercel, dữ liệu mặc định ban đầu được đọc từ tệp tin <code className="px-1 py-0.5 bg-amber-100 rounded text-amber-800 font-mono text-[10px]">src/data.ts</code>. Sao chép cấu trúc dữ liệu hiện tại để dán đè lên tệp nguồn này, đảm bảo dữ liệu mặc định của ứng dụng luôn đồng bộ.
+          </p>
+
+          <div className="pt-2">
+            <button
+              onClick={handleCopyTSData}
+              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-black shadow-sm transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+            >
+              <FileCode className="w-3.5 h-3.5" />
+              Sao Chép Mã Tĩnh src/data.ts
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }

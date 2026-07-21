@@ -149,20 +149,104 @@ export default function App() {
           getSupabaseData<SchoolSetting[]>('school_settings', settings)
         ]);
 
-        if (dbAccounts && dbAccounts.length > 0) { setAccounts(dbAccounts); appData.saveAccounts(dbAccounts); }
-        if (dbClasses && dbClasses.length > 0) { setClasses(dbClasses); appData.saveClasses(dbClasses); }
-        if (dbAssignments && dbAssignments.length > 0) { setAssignments(dbAssignments); appData.saveAssignments(dbAssignments); }
-        if (dbRegistrations && dbRegistrations.length > 0) { setRegistrations(dbRegistrations); appData.saveCourseRegistrations(dbRegistrations); }
-        if (dbSurveys && dbSurveys.length > 0) { setSurveys(dbSurveys); appData.saveSurveys(dbSurveys); }
-        if (dbExams && dbExams.length > 0) { setExams(dbExams); appData.saveExams(dbExams); }
-        if (dbHomework && dbHomework.length > 0) { setHomeworkList(dbHomework); appData.saveHomework(dbHomework); }
-        if (dbSubmissions && dbSubmissions.length > 0) { setSubmissions(dbSubmissions); appData.saveSubmissions(dbSubmissions); }
-        if (dbDocuments && dbDocuments.length > 0) { setDocuments(dbDocuments); appData.saveDocuments(dbDocuments); }
-        if (dbNotifications && dbNotifications.length > 0) { setNotifications(dbNotifications); appData.saveNotifications(dbNotifications); }
-        if (dbActivities && dbActivities.length > 0) { setActivities(dbActivities); appData.saveActivities(dbActivities); }
-        if (dbOutstandingStudents && dbOutstandingStudents.length > 0) { setOutstandingStudents(dbOutstandingStudents); appData.saveOutstandingStudents(dbOutstandingStudents); }
-        if (dbOutstandingClasses && dbOutstandingClasses.length > 0) { setOutstandingClasses(dbOutstandingClasses); appData.saveOutstandingClasses(dbOutstandingClasses); }
-        if (dbSettings && dbSettings.length > 0) { setSettings(dbSettings); appData.saveSettings(dbSettings); }
+        if (dbAccounts && dbAccounts.length > 0) { 
+          setAccounts(dbAccounts); 
+          appData.saveAccounts(dbAccounts); 
+        } else if (dbAccounts && dbAccounts.length === 0 && accounts && accounts.length > 0) {
+          console.log('[Supabase Auto-Sync] school_accounts trống. Tự động cập nhật dữ liệu...');
+          saveSupabaseData('school_accounts', accounts);
+        }
+
+        if (dbClasses && dbClasses.length > 0) { 
+          setClasses(dbClasses); 
+          appData.saveClasses(dbClasses); 
+        } else if (dbClasses && dbClasses.length === 0 && classes && classes.length > 0) {
+          saveSupabaseData('school_classes', classes);
+        }
+
+        if (dbAssignments && dbAssignments.length > 0) { 
+          setAssignments(dbAssignments); 
+          appData.saveAssignments(dbAssignments); 
+        } else if (dbAssignments && dbAssignments.length === 0 && assignments && assignments.length > 0) {
+          saveSupabaseData('school_assignments', assignments);
+        }
+
+        if (dbRegistrations && dbRegistrations.length > 0) { 
+          setRegistrations(dbRegistrations); 
+          appData.saveCourseRegistrations(dbRegistrations); 
+        } else if (dbRegistrations && dbRegistrations.length === 0 && registrations && registrations.length > 0) {
+          saveSupabaseData('school_course_registrations', registrations);
+        }
+
+        if (dbSurveys && dbSurveys.length > 0) { 
+          setSurveys(dbSurveys); 
+          appData.saveSurveys(dbSurveys); 
+        } else if (dbSurveys && dbSurveys.length === 0 && surveys && surveys.length > 0) {
+          saveSupabaseData('school_surveys', surveys);
+        }
+
+        if (dbExams && dbExams.length > 0) { 
+          setExams(dbExams); 
+          appData.saveExams(dbExams); 
+        } else if (dbExams && dbExams.length === 0 && exams && exams.length > 0) {
+          saveSupabaseData('school_exams', exams);
+        }
+
+        if (dbHomework && dbHomework.length > 0) { 
+          setHomeworkList(dbHomework); 
+          appData.saveHomework(dbHomework); 
+        } else if (dbHomework && dbHomework.length === 0 && homeworkList && homeworkList.length > 0) {
+          saveSupabaseData('school_homework', homeworkList);
+        }
+
+        if (dbSubmissions && dbSubmissions.length > 0) { 
+          setSubmissions(dbSubmissions); 
+          appData.saveSubmissions(dbSubmissions); 
+        } else if (dbSubmissions && dbSubmissions.length === 0 && submissions && submissions.length > 0) {
+          saveSupabaseData('school_submissions', submissions);
+        }
+
+        if (dbDocuments && dbDocuments.length > 0) { 
+          setDocuments(dbDocuments); 
+          appData.saveDocuments(dbDocuments); 
+        } else if (dbDocuments && dbDocuments.length === 0 && documents && documents.length > 0) {
+          saveSupabaseData('school_documents', documents);
+        }
+
+        if (dbNotifications && dbNotifications.length > 0) { 
+          setNotifications(dbNotifications); 
+          appData.saveNotifications(dbNotifications); 
+        } else if (dbNotifications && dbNotifications.length === 0 && notifications && notifications.length > 0) {
+          saveSupabaseData('school_notifications', notifications);
+        }
+
+        if (dbActivities && dbActivities.length > 0) { 
+          setActivities(dbActivities); 
+          appData.saveActivities(dbActivities); 
+        } else if (dbActivities && dbActivities.length === 0 && activities && activities.length > 0) {
+          saveSupabaseData('school_activities', activities);
+        }
+
+        if (dbOutstandingStudents && dbOutstandingStudents.length > 0) { 
+          setOutstandingStudents(dbOutstandingStudents); 
+          appData.saveOutstandingStudents(dbOutstandingStudents); 
+        } else if (dbOutstandingStudents && dbOutstandingStudents.length === 0 && outstandingStudents && outstandingStudents.length > 0) {
+          saveSupabaseData('school_outstanding_students', outstandingStudents);
+        }
+
+        if (dbOutstandingClasses && dbOutstandingClasses.length > 0) { 
+          setOutstandingClasses(dbOutstandingClasses); 
+          appData.saveOutstandingClasses(dbOutstandingClasses); 
+        } else if (dbOutstandingClasses && dbOutstandingClasses.length === 0 && outstandingClasses && outstandingClasses.length > 0) {
+          saveSupabaseData('school_outstanding_classes', outstandingClasses);
+        }
+
+        if (dbSettings && dbSettings.length > 0) { 
+          setSettings(dbSettings); 
+          appData.saveSettings(dbSettings); 
+        } else if (dbSettings && dbSettings.length === 0 && settings && settings.length > 0) {
+          saveSupabaseData('school_settings', settings);
+        }
         
         console.log('[Supabase Sync] Đồng bộ hoàn tất!');
       } catch (err) {
@@ -494,6 +578,20 @@ export default function App() {
             outstandingClasses={outstandingClasses}
             settings={settings}
             showToast={showToast}
+            onSaveAccounts={handleSaveAccounts}
+            onSaveClasses={handleSaveClasses}
+            onSaveAssignments={handleSaveAssignments}
+            onSaveRegistrations={handleSaveRegistrations}
+            onSaveSurveys={handleSaveSurveys}
+            onSaveExams={handleSaveExams}
+            onSaveHomework={handleSaveHomework}
+            onSaveSubmissions={handleSaveSubmissions}
+            onSaveDocuments={handleSaveDocuments}
+            onSaveNotifications={handleSaveNotifications}
+            onSaveActivities={handleSaveActivities}
+            onSaveOutstandingStudents={handleSaveOutstandingStudents}
+            onSaveOutstandingClasses={handleSaveOutstandingClasses}
+            onSaveSettings={handleSaveSettings}
           />
         );
 
