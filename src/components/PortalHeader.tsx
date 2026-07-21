@@ -262,7 +262,7 @@ export default function PortalHeader({
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-width="1"/>
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="1"/>
               </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#grid)" />
@@ -274,7 +274,7 @@ export default function PortalHeader({
             {/* School Emblem Emblem SVG */}
             <div className="w-16 h-16 md:w-24 md:h-24 bg-white rounded-2xl shadow-xl p-2.5 flex items-center justify-center border-2 border-brandOrange/50 transform hover:scale-105 transition-transform duration-300 shrink-0">
               <svg className="w-full h-full text-brandBlue" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M50 5L15 25V55C15 72.5 50 90 50 90C50 90 85 72.5 85 55V25L50 5Z" fill="#1e3a8a" stroke="#ea580c" stroke-width="4"/>
+                <path d="M50 5L15 25V55C15 72.5 50 90 50 90C50 90 85 72.5 85 55V25L50 5Z" fill="#1e3a8a" stroke="#ea580c" strokeWidth="4"/>
                 <path d="M30 45L50 30L70 45V65C70 70 50 80 50 80C50 80 30 70 30 65V45Z" fill="#ea580c"/>
                 <path d="M42 42V55H47V42H42ZM53 42V55H58V42H53Z" fill="white"/>
                 <path d="M50 15L25 28L50 41L75 28L50 15Z" fill="#f59e0b"/>
@@ -399,8 +399,12 @@ export default function PortalHeader({
       <AnimatePresence>
         {/* LOGIN MODAL */}
         {showLoginModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div 
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowLoginModal(false)}
+          >
             <motion.div 
+              onClick={(e) => e.stopPropagation()}
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
@@ -501,8 +505,12 @@ export default function PortalHeader({
 
         {/* REGISTER MODAL */}
         {showRegisterModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div 
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowRegisterModal(false)}
+          >
             <motion.div 
+              onClick={(e) => e.stopPropagation()}
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
@@ -607,8 +615,16 @@ export default function PortalHeader({
 
         {/* FORGOT PASSWORD MODAL */}
         {showForgotModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div 
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={() => {
+              setShowForgotModal(false);
+              setForgotSuccess('');
+              setForgotUsername('');
+            }}
+          >
             <motion.div 
+              onClick={(e) => e.stopPropagation()}
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
@@ -678,8 +694,16 @@ export default function PortalHeader({
 
         {/* CHANGE/FORCED PASSWORD MODAL */}
         {showChangePassModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div 
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={() => {
+              if (!isForcedChange) {
+                setShowChangePassModal(false);
+              }
+            }}
+          >
             <motion.div 
+              onClick={(e) => e.stopPropagation()}
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}

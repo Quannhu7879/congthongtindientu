@@ -575,8 +575,14 @@ export function PortalDocuments({
 
       {/* Upload Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-xs">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in"
+          onClick={() => setShowUploadModal(false)}
+        >
+          <div 
+            className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-xs"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex justify-between items-center border-b pb-3 mb-4">
               <h4 className="font-black text-slate-800 text-sm uppercase tracking-wider flex items-center gap-1.5">
                 <UploadCloud className="w-4 h-4 text-brandOrange animate-bounce" /> Đăng tải văn bản chỉ đạo mới
@@ -775,8 +781,14 @@ export function PortalHomework({
 
       {/* Add Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in"
+          onClick={() => setShowAddModal(false)}
+        >
+          <div 
+            className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex justify-between items-center border-b pb-3 mb-4">
               <h4 className="font-black text-slate-800 text-sm uppercase tracking-wider flex items-center gap-1.5">
                 <PenTool className="w-4 h-4 text-brandOrange animate-bounce" /> Giao nhiệm vụ bài tập về nhà mới
@@ -1016,8 +1028,14 @@ export function PortalExams({
 
       {/* Add Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in"
+          onClick={() => setShowAddModal(false)}
+        >
+          <div 
+            className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto custom-scrollbar"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex justify-between items-center border-b pb-3 mb-4">
               <h4 className="font-black text-slate-800 text-sm uppercase tracking-wider flex items-center gap-1.5">
                 <FileText className="w-4 h-4 text-brandOrange animate-bounce" /> Biên soạn &amp; Phát hành đề kiểm tra mới

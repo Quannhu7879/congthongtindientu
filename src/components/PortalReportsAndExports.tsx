@@ -199,8 +199,14 @@ export function PortalTranscript({
 
       {/* Detailed Report Card Overlay Modal */}
       {selectedStudentReport && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-xs text-slate-600 font-semibold max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in"
+          onClick={() => setSelectedStudentReport(null)}
+        >
+          <div 
+            className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-xs text-slate-600 font-semibold max-h-[90vh] overflow-y-auto custom-scrollbar"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex justify-between border-b pb-3 mb-4">
               <h4 className="font-black text-slate-800 text-sm uppercase flex items-center gap-1.5">
                 <Award className="w-4 h-4 text-brandOrange animate-pulse" /> Sổ điểm danh dự điện tử

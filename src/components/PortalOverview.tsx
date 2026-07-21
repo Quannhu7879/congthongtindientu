@@ -2421,8 +2421,15 @@ export default function PortalOverview({
       {/* DETAIL MODAL FOR SELECTED ACTIVITY */}
       <AnimatePresence>
         {selectedActivity && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div 
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={() => {
+              setSelectedActivity(null);
+              setIsEditingActivity(false);
+            }}
+          >
             <motion.div 
+              onClick={(e) => e.stopPropagation()}
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
@@ -2633,8 +2640,12 @@ export default function PortalOverview({
       {/* NEW ACTIVITY NEWS MODAL */}
       <AnimatePresence>
         {showAddActivity && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div 
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowAddActivity(false)}
+          >
             <motion.div 
+              onClick={(e) => e.stopPropagation()}
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}

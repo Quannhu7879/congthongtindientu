@@ -224,8 +224,14 @@ export function PortalAccountManagement({
 
       {/* Account Add/Edit Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 font-semibold text-slate-600">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in"
+          onClick={() => setShowAddModal(false)}
+        >
+          <div 
+            className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 font-semibold text-slate-600"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex justify-between border-b pb-3 mb-4">
               <h4 className="font-extrabold text-sm text-slate-800">
                 {editingId ? 'Chỉnh Sửa Tài Khoản' : 'Thêm Tài Khoản Mới'}
@@ -310,8 +316,14 @@ export function PortalAccountManagement({
 
       {/* Teacher Permission Modal */}
       {showPermModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl relative font-semibold text-slate-600">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in"
+          onClick={() => setShowPermModal(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl relative font-semibold text-slate-600"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex justify-between border-b pb-3 mb-4">
               <h4 className="font-extrabold text-sm text-amber-600 flex items-center gap-2">
                 <Users className="w-4 h-4" /> Phân quyền đăng tải tin tức hoạt động
@@ -435,8 +447,14 @@ export function PortalClassStructure({
 
       {/* Add Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 font-semibold text-slate-600">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in"
+          onClick={() => setShowAddModal(false)}
+        >
+          <div 
+            className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 font-semibold text-slate-600"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex justify-between border-b pb-3 mb-4">
               <h4 className="font-extrabold text-sm">Thêm Lớp Học Mới</h4>
               <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">
@@ -699,8 +717,14 @@ export function PortalTeacherAssignment({
 
       {/* Assignment Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border font-semibold text-slate-600 max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in"
+          onClick={() => setShowAddModal(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border font-semibold text-slate-600 max-h-[90vh] overflow-y-auto custom-scrollbar"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex justify-between border-b pb-3 mb-4">
               <h4 className="font-extrabold text-sm text-brandBlue flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-emerald-600" />
@@ -884,8 +908,14 @@ export function PortalGradingDesk({
 
       {/* Grading Detail Modal */}
       {showModal && activeSub && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 font-semibold text-slate-600 max-h-[95vh] overflow-y-auto custom-scrollbar">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in"
+          onClick={() => setShowModal(false)}
+        >
+          <div 
+            className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 font-semibold text-slate-600 max-h-[95vh] overflow-y-auto custom-scrollbar"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex justify-between border-b pb-3 mb-4">
               <h4 className="font-black text-slate-800 text-sm uppercase flex items-center gap-1.5">
                 <CheckSquare className="w-4 h-4 text-brandBlue animate-pulse" /> Đánh giá phiếu khảo thí chi tiết
