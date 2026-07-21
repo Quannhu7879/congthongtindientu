@@ -34,6 +34,7 @@ export default function PortalRightNavBanner({
   const [newContent, setNewContent] = useState('');
 
   const isAdminOrTeacher = currentUser && (currentUser.role === 'Admin' || currentUser.role === 'Giáo viên');
+  const isAdmin = currentUser && currentUser.role === 'Admin';
 
   const toggleExpand = (id: number) => {
     setExpandedId(expandedId === id ? null : id);
@@ -69,6 +70,10 @@ export default function PortalRightNavBanner({
   };
 
   const handleDeleteNotification = (id: number, title: string) => {
+    if (!isAdmin) {
+      showToast('Chỉ tài khoản Admin mới được phép xóa thông báo!', 'error');
+      return;
+    }
     if (window.confirm(`Bạn có chắc chắn muốn xóa thông báo: "${title}"?`)) {
       const updated = notifications.filter(n => n.id !== id);
       onSaveNotifications(updated);
@@ -256,7 +261,7 @@ export default function PortalRightNavBanner({
                         )}
                       </button>
 
-                      {isAdminOrTeacher && (
+                      {isAdmin && (
                         <button
                           onClick={() => handleDeleteNotification(notif.id, notif.title)}
                           className="text-rose-500 hover:text-rose-700 flex items-center gap-1 cursor-pointer transition"
