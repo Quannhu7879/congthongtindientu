@@ -1,7 +1,6 @@
 import React from 'react';
 import { 
   LayoutDashboard, 
-  Inbox,
   Compass, 
   FolderOpen, 
   Users, 
@@ -37,7 +36,6 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { id: 'overview', label: 'Trang chủ tổng quan', icon: LayoutDashboard, colorClass: 'text-brandBlue', allowedRoles: ['all'] },
-  { id: 'my-submissions', label: 'Nội dung tôi gửi lên', icon: Inbox, colorClass: 'text-rose-500', allowedRoles: ['all'] },
   { id: 'ai-assistant', label: 'Trợ lý học thuật AI', icon: Sparkles, colorClass: 'text-purple-600', allowedRoles: ['all'] },
   { id: 'course-registration', label: 'Khóa học của con', icon: Compass, colorClass: 'text-emerald-600', allowedRoles: ['Admin', 'Học sinh', 'Phụ huynh'] },
   { id: 'documents', label: 'Văn bản chỉ đạo', icon: FolderOpen, colorClass: 'text-brandOrange', allowedRoles: ['Admin', 'Giáo viên', 'Học sinh', 'Phụ huynh'] },
