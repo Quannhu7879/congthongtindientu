@@ -1,0 +1,6 @@
+{
+  "name": "THCS Hòa Phú - Cổng Thông Tin Điện Tử",
+  "description": "Cổng thông tin giáo dục điện tử, kết quả học bạ số và quản lý chuyển đổi số Trường THCS Hòa Phú",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
