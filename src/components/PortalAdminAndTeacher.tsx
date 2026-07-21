@@ -23,8 +23,11 @@ import {
   UserCheck,
   UserPlus,
   AlertTriangle,
-  Sparkles
+  Sparkles,
+  FileSpreadsheet,
+  FileDown
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { 
   User, 
   ClassItem, 
@@ -397,6 +400,202 @@ export function PortalClassStructure({
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
   const [newStudentName, setNewStudentName] = useState('');
   const [newStudentUsername, setNewStudentUsername] = useState('');
+
+  const generateUsernameFromName = (name: string, className: string): string => {
+    if (!name.trim()) return '';
+    const cleanName = name
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D')
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '');
+    const cleanClass = className.toLowerCase().replace(/\s+/g, '');
+    return `${cleanName}_${cleanClass}`;
+  };
+
+  // Download Excel template
+  const downloadTemplate = (className: string) => {
+    try {
+      const data = [
+        {
+          "STT": 1,
+          "Họ và tên": "Nguyễn Văn An",
+          "Lớp": className
+        },
+        {
+          "STT": 2,
+          "Họ và tên": "Trần Thị Hồng",
+          "Lớp": className
+        },
+        {
+          "STT": 3,
+          "Họ và tên": "Phạm Quốc Khánh",
+          "Lớp": className
+        }
+      ];
+
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Mẫu cấp tài khoản");
+      
+      const colWidths = [
+        { wch: 6 },  // STT
+        { wch: 25 }, // Họ và tên
+        { wch: 12 }  // Lớp
+      ];
+      worksheet["!cols"] = colWidths;
+
+      XLSX.writeFile(workbook, `Bieu_Mau_Cap_Tai_Khoan_Lop_${className}.xlsx`);
+      showToast("Tải biểu mẫu Excel thành công!", "success");
+    } catch (err) {
+      console.error(err);
+      showToast("Lỗi khi tạo file mẫu Excel!", "error");
+    }
+  };
+
+  // Export current students to Excel
+  const exportToExcel = (students: User[], className: string) => {
+    try {
+      if (students.length === 0) {
+        showToast("Lớp hiện không có học sinh nào để xuất!", "info");
+        return;
+      }
+
+      const data = students.map((s, idx) => ({
+        "STT": idx + 1,
+        "Họ và tên": s.name,
+        "Tên đăng nhập": s.username,
+        "Mật khẩu mặc định": "123",
+        "Vai trò": "Học sinh",
+        "Lớp": s.extra
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, `Học sinh lớp ${className}`);
+      
+      const colWidths = [
+        { wch: 6 },  // STT
+        { wch: 25 }, // Họ và tên
+        { wch: 22 }, // Tên đăng nhập
+        { wch: 18 }, // Mật khẩu mặc định
+        { wch: 12 }, // Vai trò
+        { wch: 10 }  // Lớp
+      ];
+      worksheet["!cols"] = colWidths;
+
+      XLSX.writeFile(workbook, `Danh_Sach_Tai_Khoan_Hoc_Sinh_Lop_${className}.xlsx`);
+      showToast(`Xuất file Excel danh sách lớp ${className} thành công!`, "success");
+    } catch (err) {
+      console.error(err);
+      showToast("Lỗi khi xuất danh sách học sinh ra file Excel!", "error");
+    }
+  };
+
+  // Import students from Excel
+  const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>, className: string) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json<any>(ws);
+
+        if (data.length === 0) {
+          showToast("File Excel rỗng hoặc không có dữ liệu hợp lệ!", "error");
+          return;
+        }
+
+        // Find the "Họ và tên" or similar column
+        const firstRow = data[0];
+        const nameKey = Object.keys(firstRow).find(key => 
+          key.toLowerCase().includes("họ") || 
+          key.toLowerCase().includes("tên") || 
+          key.toLowerCase().includes("name") ||
+          key.toLowerCase() === "ho_va_ten"
+        );
+        
+        if (!nameKey) {
+          showToast("Không tìm thấy cột 'Họ và tên' hoặc 'Name' trong file Excel!", "error");
+          return;
+        }
+
+        const importedAccounts: User[] = [];
+        let allUsernames = [...accounts.map(a => a.username)];
+
+        data.forEach((row: any, i: number) => {
+          const rawName = row[nameKey]?.toString().trim();
+          if (!rawName) return;
+
+          // Generate username automatically
+          let baseUsername = generateUsernameFromName(rawName, className);
+          let username = baseUsername;
+          let counter = 1;
+
+          // Resolve duplicate usernames
+          while (allUsernames.includes(username)) {
+            username = `${baseUsername}_${counter}`;
+            counter++;
+          }
+
+          allUsernames.push(username);
+
+          importedAccounts.push({
+            id: Date.now() + i + Math.floor(Math.random() * 1000),
+            name: rawName,
+            username: username,
+            password: '123',
+            role: 'Học sinh',
+            extra: className,
+            isFirstLogin: true,
+            canPostNews: false
+          });
+        });
+
+        if (importedAccounts.length === 0) {
+          showToast("Không phát hiện học sinh nào hợp lệ từ file Excel!", "error");
+          return;
+        }
+
+        if (onSaveAccounts) {
+          onSaveAccounts([...accounts, ...importedAccounts]);
+          showToast(`Nhập dữ liệu thành công! Đã cấp thêm ${importedAccounts.length} tài khoản học sinh lớp ${className} từ file Excel.`, "success");
+          
+          // Also automatically synchronize classes list total count
+          const updatedClasses = classes.map(c => {
+            if (c.lop === className) {
+              const prevStudentsCount = accounts.filter(a => a.role === 'Học sinh' && a.extra === className).length;
+              return { ...c, total: prevStudentsCount + importedAccounts.length };
+            }
+            return c;
+          });
+          onSaveClasses(updatedClasses);
+
+          // Update the local state for selected class to represent updated sĩ số
+          if (selectedClass && selectedClass.lop === className) {
+            setSelectedClass({
+              ...selectedClass,
+              total: accounts.filter(a => a.role === 'Học sinh' && a.extra === className).length + importedAccounts.length
+            });
+          }
+        } else {
+          showToast("Chức năng lưu tài khoản chưa được thiết lập trên máy chủ!", "error");
+        }
+      } catch (err) {
+        console.error(err);
+        showToast("Có lỗi xảy ra khi xử lý file Excel. Vui lòng kiểm tra lại định dạng!", "error");
+      }
+    };
+    reader.readAsBinaryString(file);
+    e.target.value = ''; // Reset input
+  };
 
   const openModal = () => {
     const teachers = accounts.filter(a => a.role === 'Giáo viên');
@@ -827,6 +1026,59 @@ export function PortalClassStructure({
                   )}
                 </div>
 
+                {/* Excel integration tools */}
+                <div className="border-t pt-4 pb-1 mb-4">
+                  <h5 className="font-extrabold text-xs text-slate-800 mb-2.5 flex items-center gap-1.5">
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                    Quản lý tài khoản hàng loạt qua Excel
+                  </h5>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {/* Template download */}
+                    <button
+                      type="button"
+                      onClick={() => downloadTemplate(selectedClass.lop)}
+                      className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition font-bold border border-slate-200 cursor-pointer"
+                    >
+                      <FileDown className="w-3.5 h-3.5 text-blue-600" />
+                      Tải biểu mẫu Excel
+                    </button>
+
+                    {/* Export current students */}
+                    <button
+                      type="button"
+                      onClick={() => exportToExcel(classStudents, selectedClass.lop)}
+                      className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition font-bold border border-slate-200 cursor-pointer"
+                      disabled={classStudents.length === 0}
+                      style={{ opacity: classStudents.length === 0 ? 0.6 : 1 }}
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                      Xuất danh sách Excel
+                    </button>
+
+                    {/* Upload button wrapper */}
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept=".xlsx, .xls"
+                        id="excel-file-upload-input"
+                        onChange={(e) => handleImportExcel(e, selectedClass.lop)}
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="excel-file-upload-input"
+                        className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition font-bold border border-emerald-200 cursor-pointer w-full text-center block"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5 text-emerald-600 animate-spin-slow" />
+                        Tải file Excel lên
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <p className="text-[9px] text-slate-400 font-medium mt-2 leading-relaxed">
+                    * Gợi ý: Hãy nhấn <b>Tải biểu mẫu Excel</b>, điền thông tin học sinh rồi bấm <b>Tải file Excel lên</b>. Hệ thống tự động sinh tài khoản theo mẫu <code>tên_lớp</code> (không dấu) và đặt mật khẩu là <code>123</code>.
+                  </p>
+                </div>
+
                 {/* Add student inline form */}
                 <div className="border-t pt-4">
                   <h5 className="font-extrabold text-xs text-slate-800 mb-2 flex items-center gap-1">
@@ -839,7 +1091,11 @@ export function PortalClassStructure({
                       <input
                         type="text"
                         value={newStudentName}
-                        onChange={(e) => setNewStudentName(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setNewStudentName(val);
+                          setNewStudentUsername(generateUsernameFromName(val, selectedClass.lop));
+                        }}
                         placeholder="Họ và tên học sinh"
                         className="w-full text-xs p-2 border border-slate-200 rounded-lg outline-none font-bold placeholder:font-normal"
                       />
