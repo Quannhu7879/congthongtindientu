@@ -41,6 +41,10 @@ interface PortalOverviewProps {
   settings?: SchoolSetting[];
   onSaveSettings?: (settings: SchoolSetting[]) => void;
   showToast: (msg: string, type?: 'success' | 'info' | 'error') => void;
+  accounts: User[];
+  onSaveAccounts: (accounts: User[]) => void;
+  onSaveOutstandingStudents: (students: OutstandingStudent[]) => void;
+  onSaveOutstandingClasses: (classes: OutstandingClass[]) => void;
 }
 
 export default function PortalOverview({
@@ -56,7 +60,11 @@ export default function PortalOverview({
   onViewStudent,
   settings,
   onSaveSettings,
-  showToast
+  showToast,
+  accounts,
+  onSaveAccounts,
+  onSaveOutstandingStudents,
+  onSaveOutstandingClasses
 }: PortalOverviewProps) {
   // Helper to get configuration value with fallback
   const getSettingValue = (id: string, defVal: string) => {
@@ -66,6 +74,7 @@ export default function PortalOverview({
   // Admin and Carousel state managers
   const [showAdminSettings, setShowAdminSettings] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [adminActiveTab, setAdminActiveTab] = useState<'branding' | 'permissions' | 'activities' | 'students' | 'classes'>('branding');
 
   const [adminBannerTitle, setAdminBannerTitle] = useState(() => getSettingValue('hero_title', 'Cổng thông tin giáo dục THCS Hòa Phú'));
   const [adminBannerDesc, setAdminBannerDesc] = useState(() => getSettingValue('hero_desc', 'Chào mừng năm học mới. Thầy trò trường THCS Hòa Phú thi đua thực hiện đổi mới số, hướng tới dạy tốt và học tập tiến bộ không ngừng.'));
@@ -75,6 +84,15 @@ export default function PortalOverview({
   const [adminGradTo, setAdminGradTo] = useState(() => getSettingValue('hero_bg_gradient_to', '#1e40af'));
   const [adminMarqueeText, setAdminMarqueeText] = useState(() => settings?.find(s => s.id === 'marquee_text')?.value || '🚀 Chào mừng quý thầy cô, phụ huynh và các em học sinh đến với Cổng thông tin điện tử & Chuyển đổi số học tập Trường THCS Hòa Phú - Ứng Hòa - Hà Nội!');
   
+  // New visual header settings states
+  const [adminBannerBgType, setAdminBannerBgType] = useState(() => getSettingValue('banner_bg_type', 'gradient'));
+  const [adminBannerBgGradientFrom, setAdminBannerBgGradientFrom] = useState(() => getSettingValue('banner_bg_gradient_from', '#1e3a8a'));
+  const [adminBannerBgGradientTo, setAdminBannerBgGradientTo] = useState(() => getSettingValue('banner_bg_gradient_to', '#1c3d5a'));
+  const [adminBannerBgImage, setAdminBannerBgImage] = useState(() => getSettingValue('banner_bg_image', ''));
+  const [adminBannerFeaturedImage, setAdminBannerFeaturedImage] = useState(() => getSettingValue('banner_featured_image', 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=400'));
+  const [adminCurrentSemester, setAdminCurrentSemester] = useState(() => getSettingValue('current_semester', 'Học kỳ I'));
+  const [adminCurrentSchoolYear, setAdminCurrentSchoolYear] = useState(() => getSettingValue('current_school_year', 'Năm học 2026 - 2027'));
+
   const [adminCarouselList, setAdminCarouselList] = useState<string[]>(() => {
     try {
       const val = getSettingValue('carousel_images', '[]');
@@ -104,6 +122,15 @@ export default function PortalOverview({
       setAdminGradFrom(getSettingValue('hero_bg_gradient_from', '#1e3a8a'));
       setAdminGradTo(getSettingValue('hero_bg_gradient_to', '#1e40af'));
       setAdminMarqueeText(settings?.find(s => s.id === 'marquee_text')?.value || '🚀 Chào mừng quý thầy cô, phụ huynh và các em học sinh đến với Cổng thông tin điện tử & Chuyển đổi số học tập Trường THCS Hòa Phú - Ứng Hòa - Hà Nội!');
+      
+      setAdminBannerBgType(getSettingValue('banner_bg_type', 'gradient'));
+      setAdminBannerBgGradientFrom(getSettingValue('banner_bg_gradient_from', '#1e3a8a'));
+      setAdminBannerBgGradientTo(getSettingValue('banner_bg_gradient_to', '#1c3d5a'));
+      setAdminBannerBgImage(getSettingValue('banner_bg_image', ''));
+      setAdminBannerFeaturedImage(getSettingValue('banner_featured_image', 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=400'));
+      setAdminCurrentSemester(getSettingValue('current_semester', 'Học kỳ I'));
+      setAdminCurrentSchoolYear(getSettingValue('current_school_year', 'Năm học 2026 - 2027'));
+
       try {
         const val = getSettingValue('carousel_images', '[]');
         const parsed = JSON.parse(val);
@@ -113,6 +140,200 @@ export default function PortalOverview({
       } catch(e) {}
     }
   }, [settings]);
+
+  const toggleTeacherPostPermission = (username: string) => {
+    const updated = accounts.map(acc => {
+      if (acc.username === username) {
+        return { ...acc, canPostNews: !acc.canPostNews };
+      }
+      return acc;
+    });
+    onSaveAccounts(updated);
+    showToast("Đã cập nhật quyền đăng tin thành công!", "success");
+  };
+
+  // States for student management
+  const [editingStudentId, setEditingStudentId] = useState<number | null>(null);
+  const [isAddingStudent, setIsAddingStudent] = useState(false);
+  const [studentFormName, setStudentFormName] = useState('');
+  const [studentFormClass, setStudentFormClass] = useState('');
+  const [studentFormBadge, setStudentFormBadge] = useState('');
+  const [studentFormGpa, setStudentFormGpa] = useState('');
+  const [studentFormConduct, setStudentFormConduct] = useState('');
+  const [studentFormAvatar, setStudentFormAvatar] = useState('');
+  const [studentFormAchievements, setStudentFormAchievements] = useState('');
+
+  // States for class management
+  const [editingClassId, setEditingClassId] = useState<string | null>(null);
+  const [isAddingClass, setIsAddingClass] = useState(false);
+  const [classFormLop, setClassFormLop] = useState('');
+  const [classFormGvcn, setClassFormGvcn] = useState('');
+  const [classFormSlogan, setClassFormSlogan] = useState('');
+  const [classFormIcon, setClassFormIcon] = useState('Trophy');
+  const [classFormTotal, setClassFormTotal] = useState<number>(40);
+  const [classFormAchievements, setClassFormAchievements] = useState('');
+
+  // Helper functions to populate student form
+  const startEditStudent = (stud: OutstandingStudent) => {
+    setEditingStudentId(stud.id);
+    setIsAddingStudent(false);
+    setStudentFormName(stud.name);
+    setStudentFormClass(stud.class);
+    setStudentFormBadge(stud.badge);
+    setStudentFormGpa(stud.gpa);
+    setStudentFormConduct(stud.conduct);
+    setStudentFormAvatar(stud.avatar);
+    setStudentFormAchievements(stud.achievements.join(', '));
+  };
+
+  const startAddStudent = () => {
+    setEditingStudentId(null);
+    setIsAddingStudent(true);
+    setStudentFormName('');
+    setStudentFormClass('');
+    setStudentFormBadge('');
+    setStudentFormGpa('9.5');
+    setStudentFormConduct('Tốt');
+    setStudentFormAvatar('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200');
+    setStudentFormAchievements('Học sinh xuất sắc, Đạt giải HSG cấp trường');
+  };
+
+  const handleSaveStudentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!studentFormName.trim() || !studentFormClass.trim() || !studentFormBadge.trim()) {
+      showToast("Vui lòng nhập đầy đủ họ tên, lớp và danh hiệu!", "error");
+      return;
+    }
+
+    const achList = studentFormAchievements.split(',').map(s => s.trim()).filter(Boolean);
+
+    if (isAddingStudent) {
+      const newId = outstandingStudents.length > 0 ? Math.max(...outstandingStudents.map(s => s.id)) + 1 : 1;
+      const newStudent: OutstandingStudent = {
+        id: newId,
+        name: studentFormName.trim(),
+        class: studentFormClass.trim(),
+        badge: studentFormBadge.trim(),
+        gpa: studentFormGpa.trim() || '9.5',
+        conduct: studentFormConduct.trim() || 'Tốt',
+        avatar: studentFormAvatar.trim() || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+        achievements: achList,
+        subjects: {},
+        guestbook: []
+      };
+      onSaveOutstandingStudents([...outstandingStudents, newStudent]);
+      setIsAddingStudent(false);
+      showToast("Đã thêm gương sáng học sinh thành công!", "success");
+    } else if (editingStudentId !== null) {
+      const updated = outstandingStudents.map(s => {
+        if (s.id === editingStudentId) {
+          return {
+            ...s,
+            name: studentFormName.trim(),
+            class: studentFormClass.trim(),
+            badge: studentFormBadge.trim(),
+            gpa: studentFormGpa.trim(),
+            conduct: studentFormConduct.trim(),
+            avatar: studentFormAvatar.trim(),
+            achievements: achList
+          };
+        }
+        return s;
+      });
+      onSaveOutstandingStudents(updated);
+      setEditingStudentId(null);
+      showToast("Đã cập nhật thông tin học sinh thành công!", "success");
+    }
+  };
+
+  const handleDeleteStudent = (id: number) => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa học sinh tiêu biểu này?")) {
+      const updated = outstandingStudents.filter(s => s.id !== id);
+      onSaveOutstandingStudents(updated);
+      showToast("Đã xóa học sinh khỏi danh sách gương sáng!", "success");
+    }
+  };
+
+  // Helper functions to populate class form
+  const startEditClass = (c: OutstandingClass) => {
+    setEditingClassId(c.id);
+    setIsAddingClass(false);
+    setClassFormLop(c.lop);
+    setClassFormGvcn(c.gvcn);
+    setClassFormSlogan(c.slogan);
+    setClassFormIcon(c.icon);
+    setClassFormTotal(c.total);
+    setClassFormAchievements(c.achievements.join(', '));
+  };
+
+  const startAddClass = () => {
+    setEditingClassId(null);
+    setIsAddingClass(true);
+    setClassFormLop('Lớp 9A');
+    setClassFormGvcn('Thầy Nguyễn Văn A');
+    setClassFormSlogan('Đoàn kết là sức mạnh, tự tin chiến thắng!');
+    setClassFormIcon('Trophy');
+    setClassFormTotal(40);
+    setClassFormAchievements('Lớp học tiên tiến xuất sắc, Đạt giải nhất tuần thi đua, 100% học sinh đạt hạnh kiểm tốt');
+  };
+
+  const handleSaveClassSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!classFormLop.trim() || !classFormGvcn.trim() || !classFormSlogan.trim()) {
+      showToast("Vui lòng điền đầy đủ tên lớp, GVCN và khẩu hiệu!", "error");
+      return;
+    }
+
+    const achList = classFormAchievements.split(',').map(s => s.trim()).filter(Boolean);
+    const generatedId = classFormLop.trim().toUpperCase().replace(/\s+/g, '');
+
+    if (isAddingClass) {
+      if (outstandingClasses.some(c => c.id === generatedId)) {
+        showToast("Lớp học này đã tồn tại trong danh sách!", "error");
+        return;
+      }
+      const newClass: OutstandingClass = {
+        id: generatedId,
+        lop: classFormLop.trim(),
+        gvcn: classFormGvcn.trim(),
+        slogan: classFormSlogan.trim(),
+        icon: classFormIcon,
+        iconColor: 'amber',
+        total: Number(classFormTotal) || 40,
+        achievements: achList,
+        guestbook: []
+      };
+      onSaveOutstandingClasses([...outstandingClasses, newClass]);
+      setIsAddingClass(false);
+      showToast("Đã thêm tập thể lớp tiêu biểu thành công!", "success");
+    } else if (editingClassId !== null) {
+      const updated = outstandingClasses.map(c => {
+        if (c.id === editingClassId) {
+          return {
+            ...c,
+            lop: classFormLop.trim(),
+            gvcn: classFormGvcn.trim(),
+            slogan: classFormSlogan.trim(),
+            icon: classFormIcon,
+            total: Number(classFormTotal) || 40,
+            achievements: achList
+          };
+        }
+        return c;
+      });
+      onSaveOutstandingClasses(updated);
+      setEditingClassId(null);
+      showToast("Đã cập nhật thông tin tập thể lớp thành công!", "success");
+    }
+  };
+
+  const handleDeleteClass = (id: string) => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa tập thể lớp tiêu biểu này?")) {
+      const updated = outstandingClasses.filter(c => c.id !== id);
+      onSaveOutstandingClasses(updated);
+      showToast("Đã xóa lớp học khỏi danh sách tiêu biểu!", "success");
+    }
+  };
 
   // Slideshow timer
   React.useEffect(() => {
@@ -186,7 +407,14 @@ export default function PortalOverview({
       { id: 'hero_bg_gradient_from', value: adminGradFrom.trim() },
       { id: 'hero_bg_gradient_to', value: adminGradTo.trim() },
       { id: 'marquee_text', value: adminMarqueeText.trim() },
-      { id: 'carousel_images', value: JSON.stringify(adminCarouselList) }
+      { id: 'carousel_images', value: JSON.stringify(adminCarouselList) },
+      { id: 'banner_bg_type', value: adminBannerBgType },
+      { id: 'banner_bg_gradient_from', value: adminBannerBgGradientFrom },
+      { id: 'banner_bg_gradient_to', value: adminBannerBgGradientTo },
+      { id: 'banner_bg_image', value: adminBannerBgImage.trim() },
+      { id: 'banner_featured_image', value: adminBannerFeaturedImage.trim() },
+      { id: 'current_semester', value: adminCurrentSemester.trim() },
+      { id: 'current_school_year', value: adminCurrentSchoolYear.trim() }
     ];
 
     onSaveSettings(updatedSettings);
@@ -791,160 +1019,802 @@ export default function PortalOverview({
 
       {/* Admin settings slide board */}
       {currentUser?.role === 'Admin' && showAdminSettings && (
-        <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl text-white space-y-4 shadow-xl animate-fade-in">
-          <h3 className="text-xs font-black uppercase text-brandOrange tracking-wider pb-2 border-b border-slate-800 flex items-center gap-2">
-            <span>⚙️</span> Bảng điều hành giao diện trang chủ & thông báo
-          </h3>
+        <div className="bg-slate-900 border-2 border-slate-700/80 p-6 rounded-2xl text-white space-y-6 shadow-2xl animate-fade-in relative z-20">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+            <div>
+              <h3 className="text-sm font-extrabold uppercase text-amber-500 tracking-wider flex items-center gap-2">
+                <span className="p-1 bg-amber-500/10 rounded">⚙️</span> Bảng Quản Trị Hệ Thống Giao Diện & Đăng Tin
+              </h3>
+              <p className="text-[11px] text-slate-400 mt-1 font-medium">
+                Thiết lập giao diện trực quan (Banner, Logo, Marquee) và quản lý danh sách hoạt động, gương sáng học sinh, lớp học tiêu biểu của trường.
+              </p>
+            </div>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Left Col */}
-            <div className="space-y-3">
-              <div>
-                <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Tiêu đề Hero Banner</label>
-                <input
-                  type="text"
-                  value={adminBannerTitle}
-                  onChange={(e) => setAdminBannerTitle(e.target.value)}
-                  className="w-full text-xs bg-slate-950 border border-slate-800 rounded-lg p-2 focus:ring-1 focus:ring-brandOrange focus:outline-none"
-                  placeholder="Nhập tiêu đề lớn..."
-                />
+          {/* Tab Navigation sub-bar */}
+          <div className="flex flex-wrap gap-1.5 border-b border-slate-800 pb-1">
+            <button
+              type="button"
+              onClick={() => setAdminActiveTab('branding')}
+              className={`px-4 py-2 text-xs font-bold transition rounded-t-xl cursor-pointer ${
+                adminActiveTab === 'branding'
+                  ? 'bg-slate-800 text-amber-400 border-b-2 border-amber-500'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              }`}
+            >
+              🌐 CORE BRANDING & ẢNH
+            </button>
+            <button
+              type="button"
+              onClick={() => setAdminActiveTab('permissions')}
+              className={`px-4 py-2 text-xs font-bold transition rounded-t-xl cursor-pointer ${
+                adminActiveTab === 'permissions'
+                  ? 'bg-slate-800 text-amber-400 border-b-2 border-amber-500'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              }`}
+            >
+              🔑 PHÂN QUYỀN ĐĂNG TIN
+            </button>
+            <button
+              type="button"
+              onClick={() => setAdminActiveTab('activities')}
+              className={`px-4 py-2 text-xs font-bold transition rounded-t-xl cursor-pointer ${
+                adminActiveTab === 'activities'
+                  ? 'bg-slate-800 text-amber-400 border-b-2 border-amber-500'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              }`}
+            >
+              📝 QUẢN LÝ TIN HOẠT ĐỘNG ({activities.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setAdminActiveTab('students')}
+              className={`px-4 py-2 text-xs font-bold transition rounded-t-xl cursor-pointer ${
+                adminActiveTab === 'students'
+                  ? 'bg-slate-800 text-amber-400 border-b-2 border-amber-500'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              }`}
+            >
+              🎓 GƯƠNG SÁNG HỌC SINH ({outstandingStudents.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setAdminActiveTab('classes')}
+              className={`px-4 py-2 text-xs font-bold transition rounded-t-xl cursor-pointer ${
+                adminActiveTab === 'classes'
+                  ? 'bg-slate-800 text-amber-400 border-b-2 border-amber-500'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+              }`}
+            >
+              🏆 LỚP HỌC TIÊU BIỂU ({outstandingClasses.length})
+            </button>
+          </div>
+
+          {/* TAB CONTENT: BRANDING */}
+          {adminActiveTab === 'branding' && (
+            <div className="space-y-6">
+              {/* Part 1: Hero Banner */}
+              <div className="bg-slate-950/40 p-4 border border-slate-800 rounded-xl space-y-4">
+                <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                  1. Tùy chỉnh Hero Banner (Nội dung chính)
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Tiêu đề lớn</label>
+                      <input
+                        type="text"
+                        value={adminBannerTitle}
+                        onChange={(e) => setAdminBannerTitle(e.target.value)}
+                        className="w-full text-xs bg-slate-950 border border-slate-800 rounded-lg p-2 focus:ring-1 focus:ring-amber-500 focus:outline-none text-slate-100"
+                        placeholder="Cổng thông tin giáo dục..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Mô tả tóm tắt</label>
+                      <textarea
+                        value={adminBannerDesc}
+                        onChange={(e) => setAdminBannerDesc(e.target.value)}
+                        className="w-full text-xs bg-slate-950 border border-slate-800 rounded-lg p-2 h-16 focus:ring-1 focus:ring-amber-500 focus:outline-none resize-none text-slate-100"
+                        placeholder="Chào mừng năm học mới..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Chữ chạy thông báo (Marquee)</label>
+                      <input
+                        type="text"
+                        value={adminMarqueeText}
+                        onChange={(e) => setAdminMarqueeText(e.target.value)}
+                        className="w-full text-xs bg-slate-950 border border-slate-800 rounded-lg p-2 focus:ring-1 focus:ring-amber-500 focus:outline-none text-slate-100"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Kiểu nền Hero Banner</label>
+                      <select
+                        value={adminBgType}
+                        onChange={(e) => setAdminBgType(e.target.value)}
+                        className="w-full text-xs bg-slate-950 border border-slate-800 rounded-lg p-2 focus:ring-1 focus:ring-amber-500 focus:outline-none text-slate-100"
+                      >
+                        <option value="gradient">Dải màu Gradient</option>
+                        <option value="image">Ảnh nền tĩnh (URL)</option>
+                        <option value="carousel">Slide ảnh chạy tự động (Carousel)</option>
+                      </select>
+                    </div>
+
+                    {adminBgType === 'gradient' && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Màu bắt đầu</label>
+                          <input
+                            type="color"
+                            value={adminGradFrom}
+                            onChange={(e) => setAdminGradFrom(e.target.value)}
+                            className="w-full h-8 bg-slate-950 border border-slate-800 rounded cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Màu kết thúc</label>
+                          <input
+                            type="color"
+                            value={adminGradTo}
+                            onChange={(e) => setAdminGradTo(e.target.value)}
+                            className="w-full h-8 bg-slate-950 border border-slate-800 rounded cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {adminBgType === 'image' && (
+                      <div>
+                        <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">URL ảnh nền tĩnh</label>
+                        <input
+                          type="text"
+                          value={adminBgImage}
+                          onChange={(e) => setAdminBgImage(e.target.value)}
+                          className="w-full text-xs bg-slate-950 border border-slate-800 rounded-lg p-2 focus:ring-1 focus:ring-amber-500 focus:outline-none text-slate-100"
+                        />
+                      </div>
+                    )}
+
+                    {adminBgType === 'carousel' && (
+                      <div className="space-y-1">
+                        <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Thêm ảnh Slide ({adminCarouselList.length})</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={newCarouselUrl}
+                            onChange={(e) => setNewCarouselUrl(e.target.value)}
+                            className="flex-1 text-xs bg-slate-950 border border-slate-800 rounded-lg p-1.5 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                            placeholder="URL ảnh mới..."
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAddCarouselImage}
+                            className="px-3 bg-amber-500 hover:bg-amber-600 rounded-lg text-xs font-bold text-slate-950"
+                          >
+                            Thêm
+                          </button>
+                        </div>
+                        <div className="max-h-24 overflow-y-auto space-y-1 p-1 bg-slate-950/60 border border-slate-850 rounded-lg">
+                          {adminCarouselList.map((img, idx) => (
+                            <div key={idx} className="flex items-center justify-between text-[9px] bg-slate-900 border border-slate-800 p-1 rounded">
+                              <span className="truncate flex-1 text-slate-300 font-mono">{img}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveCarouselImage(idx)}
+                                className="text-rose-500 hover:text-rose-400 font-bold px-1"
+                              >
+                                Xóa
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Mô tả Hero Banner</label>
-                <textarea
-                  value={adminBannerDesc}
-                  onChange={(e) => setAdminBannerDesc(e.target.value)}
-                  className="w-full text-xs bg-slate-950 border border-slate-800 rounded-lg p-2 h-20 focus:ring-1 focus:ring-brandOrange focus:outline-none resize-none"
-                  placeholder="Nhập mô tả tóm tắt..."
-                />
-              </div>
+              {/* Part 2: Visual Header Banner & Academic Info */}
+              <div className="bg-slate-950/40 p-4 border border-slate-800 rounded-xl space-y-4">
+                <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                  2. Tùy chỉnh Header Banner & Học kỳ năm học
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Kiểu nền Header Banner</label>
+                      <select
+                        value={adminBannerBgType}
+                        onChange={(e) => setAdminBannerBgType(e.target.value)}
+                        className="w-full text-xs bg-slate-950 border border-slate-800 rounded-lg p-2 focus:ring-1 focus:ring-amber-500 focus:outline-none text-slate-100"
+                      >
+                        <option value="gradient">Dải màu Gradient</option>
+                        <option value="image">Ảnh nền tĩnh (URL)</option>
+                      </select>
+                    </div>
 
-              <div>
-                <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Kiểu nền Banner</label>
-                <select
-                  value={adminBgType}
-                  onChange={(e) => setAdminBgType(e.target.value)}
-                  className="w-full text-xs bg-slate-950 border border-slate-800 rounded-lg p-2 focus:ring-1 focus:ring-brandOrange focus:outline-none"
-                >
-                  <option value="gradient">Dải màu Gradient</option>
-                  <option value="image">Ảnh nền tĩnh (URL)</option>
-                  <option value="carousel">Slide ảnh chạy tự động (Carousel)</option>
-                </select>
-              </div>
+                    {adminBannerBgType === 'gradient' ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Màu bắt đầu</label>
+                          <input
+                            type="color"
+                            value={adminBannerBgGradientFrom}
+                            onChange={(e) => setAdminBannerBgGradientFrom(e.target.value)}
+                            className="w-full h-8 bg-slate-950 border border-slate-800 rounded cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Màu kết thúc</label>
+                          <input
+                            type="color"
+                            value={adminBannerBgGradientTo}
+                            onChange={(e) => setAdminBannerBgGradientTo(e.target.value)}
+                            className="w-full h-8 bg-slate-950 border border-slate-800 rounded cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">URL ảnh nền Header Banner</label>
+                        <input
+                          type="text"
+                          value={adminBannerBgImage}
+                          onChange={(e) => setAdminBannerBgImage(e.target.value)}
+                          className="w-full text-xs bg-slate-950 border border-slate-800 rounded-lg p-2 focus:ring-1 focus:ring-amber-500 focus:outline-none text-slate-100"
+                          placeholder="https://..."
+                        />
+                      </div>
+                    )}
+                  </div>
 
-              <div>
-                <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Chữ chạy thông báo (Marquee)</label>
-                <input
-                  type="text"
-                  value={adminMarqueeText}
-                  onChange={(e) => setAdminMarqueeText(e.target.value)}
-                  className="w-full text-xs bg-slate-950 border border-slate-800 rounded-lg p-2 focus:ring-1 focus:ring-brandOrange focus:outline-none"
-                  placeholder="Nhập văn bản chạy đầu trang..."
-                />
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Ảnh nổi bật Herobanner (Góc phải)</label>
+                      <input
+                        type="text"
+                        value={adminBannerFeaturedImage}
+                        onChange={(e) => setAdminBannerFeaturedImage(e.target.value)}
+                        className="w-full text-xs bg-slate-950 border border-slate-800 rounded-lg p-2 focus:ring-1 focus:ring-amber-500 focus:outline-none text-slate-100"
+                        placeholder="URL ảnh nổi bật hình chữ nhật..."
+                      />
+                      <p className="text-[9px] text-slate-500 mt-1">Xuất hiện trên khung hình chữ nhật bo tròn góc phải Herobanner</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Học kỳ hiển thị</label>
+                        <input
+                          type="text"
+                          value={adminCurrentSemester}
+                          onChange={(e) => setAdminCurrentSemester(e.target.value)}
+                          className="w-full text-xs bg-slate-950 border border-slate-800 rounded-lg p-2 focus:ring-1 focus:ring-amber-500 focus:outline-none text-slate-100"
+                          placeholder="Học kỳ I"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Năm học hiển thị</label>
+                        <input
+                          type="text"
+                          value={adminCurrentSchoolYear}
+                          onChange={(e) => setAdminCurrentSchoolYear(e.target.value)}
+                          className="w-full text-xs bg-slate-950 border border-slate-800 rounded-lg p-2 focus:ring-1 focus:ring-amber-500 focus:outline-none text-slate-100"
+                          placeholder="Năm học 2026 - 2027"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
+          )}
 
-            {/* Right Col */}
-            <div className="space-y-3">
-              {adminBgType === 'gradient' && (
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Màu bắt đầu</label>
-                    <input
-                      type="color"
-                      value={adminGradFrom}
-                      onChange={(e) => setAdminGradFrom(e.target.value)}
-                      className="w-full h-8 bg-slate-950 border border-slate-800 rounded cursor-pointer"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Màu kết thúc</label>
-                    <input
-                      type="color"
-                      value={adminGradTo}
-                      onChange={(e) => setAdminGradTo(e.target.value)}
-                      className="w-full h-8 bg-slate-950 border border-slate-800 rounded cursor-pointer"
-                    />
-                  </div>
+          {/* TAB CONTENT: PERMISSIONS */}
+          {adminActiveTab === 'permissions' && (
+            <div className="space-y-4">
+              <div className="bg-slate-950/40 p-4 border border-slate-800 rounded-xl">
+                <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5 mb-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                  Bảng Phân Quyền Đăng Tin Và Viết Bài Cho Giáo Viên
+                </h4>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-800 text-slate-400 font-black uppercase text-[10px]">
+                        <th className="py-2.5 px-2">Họ tên giáo viên</th>
+                        <th className="py-2.5 px-2">Tên tài khoản</th>
+                        <th className="py-2.5 px-2">Lớp chủ nhiệm</th>
+                        <th className="py-2.5 px-2 text-center">Quyền đăng tin hoạt động</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {accounts.filter(acc => acc.role === 'Giáo viên').map((teacher) => (
+                        <tr key={teacher.username} className="border-b border-slate-800 hover:bg-slate-800/30 transition-colors">
+                          <td className="py-3 px-2 font-bold text-slate-200">{teacher.name}</td>
+                          <td className="py-3 px-2 font-mono text-amber-500 text-[11px]">{teacher.username}</td>
+                          <td className="py-3 px-2 text-slate-400">{teacher.extra || 'Không'}</td>
+                          <td className="py-3 px-2 text-center">
+                            <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                              <input 
+                                type="checkbox"
+                                checked={!!teacher.canPostNews}
+                                onChange={() => toggleTeacherPostPermission(teacher.username)}
+                                className="w-4 h-4 accent-amber-500 cursor-pointer"
+                              />
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                teacher.canPostNews ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-500'
+                              }`}>
+                                {teacher.canPostNews ? 'Cho phép' : 'Chặn'}
+                              </span>
+                            </label>
+                          </td>
+                        </tr>
+                      ))}
+                      {accounts.filter(acc => acc.role === 'Giáo viên').length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="py-8 text-center text-slate-500">
+                            Chưa tìm thấy giáo viên nào trong hệ thống!
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
-              )}
+              </div>
+            </div>
+          )}
 
-              {adminBgType === 'image' && (
-                <div>
-                  <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">URL ảnh nền tĩnh</label>
-                  <input
-                    type="text"
-                    value={adminBgImage}
-                    onChange={(e) => setAdminBgImage(e.target.value)}
-                    className="w-full text-xs bg-slate-950 border border-slate-800 rounded-lg p-2 focus:ring-1 focus:ring-brandOrange focus:outline-none"
-                    placeholder="https://images.unsplash.com/photo-..."
-                  />
-                  <img src={adminBgImage} alt="Preview" className="mt-2 w-full h-24 object-cover rounded-lg border border-slate-800" onError={(e) => { (e.target as any).src = "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=400" }} />
+          {/* TAB CONTENT: ACTIVITIES (Hoạt động nổi bật) */}
+          {adminActiveTab === 'activities' && (
+            <div className="space-y-4">
+              {/* Activity CRUD overview list */}
+              <div className="bg-slate-950/40 p-4 border border-slate-800 rounded-xl space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                    Danh sách tin tức hoạt động ({activities.length})
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newAct: Activity = {
+                        id: activities.length > 0 ? Math.max(...activities.map(a => a.id)) + 1 : 1,
+                        title: 'Tin tức hoạt động mới ' + new Date().toLocaleDateString(),
+                        category: 'TIN TỨC',
+                        desc: 'Tóm tắt ngắn gọn nội dung hoạt động nổi bật...',
+                        content: 'Nội dung chi tiết của hoạt động giáo dục nổi bật của trường THCS Hòa Phú...',
+                        date: new Date().toISOString().split('T')[0],
+                        img: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=400',
+                        likes: 0,
+                        comments: []
+                      };
+                      onSaveActivities([newAct, ...activities]);
+                      showToast("Đã tạo bài viết tạm thành công! Hãy click sửa dưới đây để biên tập.", "success");
+                    }}
+                    className="p-1 px-3 bg-amber-500 hover:bg-amber-600 rounded-lg text-[10px] font-black text-slate-950 flex items-center gap-1 cursor-pointer transition active:scale-95"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Thêm Bài Viết Mới
+                  </button>
                 </div>
-              )}
 
-              {adminBgType === 'carousel' && (
-                <div className="space-y-2">
-                  <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Quản lý Slide ảnh chạy tự động ({adminCarouselList.length})</label>
-                  
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={newCarouselUrl}
-                      onChange={(e) => setNewCarouselUrl(e.target.value)}
-                      className="flex-1 text-xs bg-slate-950 border border-slate-800 rounded-lg p-2 focus:ring-1 focus:ring-brandOrange focus:outline-none"
-                      placeholder="Thêm URL ảnh..."
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddCarouselImage}
-                      className="px-2.5 bg-brandOrange hover:bg-orange-600 rounded-lg text-xs font-bold"
-                    >
-                      Thêm
-                    </button>
-                  </div>
-
-                  <div className="max-h-36 overflow-y-auto space-y-1.5 p-1 bg-slate-950 border border-slate-800 rounded-lg">
-                    {adminCarouselList.map((img, idx) => (
-                      <div key={idx} className="flex items-center justify-between text-[10px] bg-slate-900 border border-slate-800 p-1.5 rounded gap-2">
-                        <span className="truncate flex-1 text-slate-300 font-mono">{img}</span>
+                <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                  {activities.map((act) => (
+                    <div key={act.id} className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between gap-4 hover:border-slate-700 transition">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <img 
+                          src={act.img || 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=400'} 
+                          alt="preview" 
+                          className="w-12 h-12 object-cover rounded-lg bg-slate-850" 
+                        />
+                        <div className="overflow-hidden">
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 uppercase tracking-wider">{act.category || 'TIN TỨC'}</span>
+                          <h5 className="text-xs font-black text-slate-200 truncate mt-1">{act.title}</h5>
+                          <p className="text-[10px] text-slate-400 truncate">{act.desc}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
                         <button
                           type="button"
-                          onClick={() => handleRemoveCarouselImage(idx)}
-                          className="text-rose-500 hover:text-rose-400 font-bold px-1"
+                          onClick={() => {
+                            setSelectedActivity(act);
+                            startEditActivity(act);
+                          }}
+                          className="p-1 px-2.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-[10px] font-bold text-slate-200"
+                        >
+                          Sửa
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteActivity(act.id)}
+                          className="p-1 px-2 bg-rose-950 hover:bg-rose-900 border border-rose-800/50 rounded-lg text-[10px] font-bold text-rose-300"
                         >
                           Xóa
                         </button>
                       </div>
-                    ))}
-                    {adminCarouselList.length === 0 && (
-                      <p className="text-center text-slate-500 text-[10px] py-4">Chưa có ảnh nào. Hãy thêm ảnh!</p>
-                    )}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
-            <button
-              type="button"
-              onClick={() => {
-                setShowAdminSettings(false);
-                showToast("Đã hủy thay đổi cấu hình tạm thời", "info");
-              }}
-              className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-extrabold transition cursor-pointer"
-            >
-              Hủy bỏ
-            </button>
-            <button
-              type="button"
-              onClick={handleSaveAdminSettings}
-              className="px-5 py-1.5 bg-brandOrange hover:bg-orange-600 text-white rounded-xl text-xs font-black transition shadow cursor-pointer active:scale-95"
-            >
-              Lưu cấu hình hệ thống
-            </button>
+          {/* TAB CONTENT: STUDENTS (Gương sáng học sinh) */}
+          {adminActiveTab === 'students' && (
+            <div className="space-y-4 animate-fade-in">
+              <div className="bg-slate-950/40 p-4 border border-slate-800 rounded-xl space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                    Danh sách Gương Sáng Học Sinh Tiêu Biểu ({outstandingStudents.length})
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={startAddStudent}
+                    className="p-1 px-3 bg-amber-500 hover:bg-amber-600 rounded-lg text-[10px] font-black text-slate-950 flex items-center gap-1 cursor-pointer transition active:scale-95"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Thêm Gương Sáng
+                  </button>
+                </div>
+
+                {/* Adding / Editing Student Form card */}
+                {(isAddingStudent || editingStudentId !== null) && (
+                  <form onSubmit={handleSaveStudentSubmit} className="bg-slate-900 border-2 border-amber-500/30 p-4 rounded-xl space-y-3">
+                    <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+                      <span className="text-[11px] font-black uppercase text-amber-400">
+                        {isAddingStudent ? '✨ Thêm học sinh danh dự tiêu biểu' : '✏️ Chỉnh sửa thông tin học sinh'}
+                      </span>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          setIsAddingStudent(false);
+                          setEditingStudentId(null);
+                        }}
+                        className="text-slate-400 hover:text-white"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                      <div>
+                        <label className="block text-[10px] text-slate-400 mb-1 font-bold">Họ và tên học sinh</label>
+                        <input 
+                          type="text" 
+                          value={studentFormName} 
+                          onChange={(e) => setStudentFormName(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 focus:outline-none focus:border-amber-500 text-slate-200"
+                          placeholder="Ví dụ: Nguyễn Trà My"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-400 mb-1 font-bold">Lớp học</label>
+                        <input 
+                          type="text" 
+                          value={studentFormClass} 
+                          onChange={(e) => setStudentFormClass(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 focus:outline-none focus:border-amber-500 text-slate-200"
+                          placeholder="Ví dụ: 9A"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-400 mb-1 font-bold">Danh hiệu vinh danh</label>
+                        <input 
+                          type="text" 
+                          value={studentFormBadge} 
+                          onChange={(e) => setStudentFormBadge(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 focus:outline-none focus:border-amber-500 text-slate-200"
+                          placeholder="Ví dụ: Học bạ vàng, Thủ khoa Toán"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-400 mb-1 font-bold">Điểm tổng kết (GPA)</label>
+                        <input 
+                          type="text" 
+                          value={studentFormGpa} 
+                          onChange={(e) => setStudentFormGpa(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 focus:outline-none focus:border-amber-500 text-slate-200"
+                          placeholder="Ví dụ: 9.8"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-400 mb-1 font-bold">Hạnh kiểm</label>
+                        <input 
+                          type="text" 
+                          value={studentFormConduct} 
+                          onChange={(e) => setStudentFormConduct(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 focus:outline-none focus:border-amber-500 text-slate-200"
+                          placeholder="Ví dụ: Tốt"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-400 mb-1 font-bold">Đường dẫn ảnh đại diện (Avatar URL)</label>
+                        <input 
+                          type="text" 
+                          value={studentFormAvatar} 
+                          onChange={(e) => setStudentFormAvatar(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 focus:outline-none focus:border-amber-500 text-slate-200"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] text-slate-400 mb-1 font-bold">Danh sách thành tích xuất sắc (Cách nhau bằng dấu phẩy)</label>
+                      <input 
+                        type="text" 
+                        value={studentFormAchievements} 
+                        onChange={(e) => setStudentFormAchievements(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 focus:outline-none focus:border-amber-500 text-xs text-slate-200"
+                        placeholder="Thành tích 1, Thành tích 2, Thành tích 3..."
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-1">
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          setIsAddingStudent(false);
+                          setEditingStudentId(null);
+                        }}
+                        className="px-3 py-1 bg-slate-800 hover:bg-slate-750 text-slate-400 rounded text-xs font-bold"
+                      >
+                        Hủy
+                      </button>
+                      <button 
+                        type="submit" 
+                        className="px-4 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded text-xs font-black"
+                      >
+                        Xác Nhận Lưu
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  {outstandingStudents.map((stud) => (
+                    <div key={stud.id} className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between gap-4 hover:border-slate-700 transition">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <img 
+                          src={stud.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'} 
+                          alt={stud.name} 
+                          className="w-10 h-10 object-cover rounded-full bg-slate-800 border border-amber-500/30" 
+                        />
+                        <div className="overflow-hidden">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-extrabold text-slate-200">{stud.name}</span>
+                            <span className="text-[10px] font-black text-amber-400 px-1.5 py-0.5 rounded bg-amber-400/10">Lớp {stud.class}</span>
+                          </div>
+                          <p className="text-[10px] text-amber-300 font-extrabold mt-0.5">🌟 Danh hiệu: {stud.badge}</p>
+                          <p className="text-[9px] text-slate-400 truncate mt-0.5">🏆 Thành tích: {stud.achievements.join(' • ')}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => startEditStudent(stud)}
+                          className="p-1 px-2 bg-slate-800 hover:bg-slate-700 rounded text-[10px] font-bold text-slate-200"
+                        >
+                          Sửa
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteStudent(stud.id)}
+                          className="p-1 px-2 bg-rose-950 hover:bg-rose-900 border border-rose-800/50 rounded text-[10px] font-bold text-rose-300"
+                        >
+                          Xóa
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB CONTENT: CLASSES (Lớp học tiêu biểu) */}
+          {adminActiveTab === 'classes' && (
+            <div className="space-y-4 animate-fade-in">
+              <div className="bg-slate-950/40 p-4 border border-slate-800 rounded-xl space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                    Danh sách Tập Thể Lớp Tiêu Biểu ({outstandingClasses.length})
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={startAddClass}
+                    className="p-1 px-3 bg-amber-500 hover:bg-amber-600 rounded-lg text-[10px] font-black text-slate-950 flex items-center gap-1 cursor-pointer transition active:scale-95"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Thêm Lớp Tiêu Biểu
+                  </button>
+                </div>
+
+                {/* Adding / Editing Class Form card */}
+                {(isAddingClass || editingClassId !== null) && (
+                  <form onSubmit={handleSaveClassSubmit} className="bg-slate-900 border-2 border-amber-500/30 p-4 rounded-xl space-y-3">
+                    <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+                      <span className="text-[11px] font-black uppercase text-amber-400">
+                        {isAddingClass ? '✨ Thêm tập thể lớp xuất sắc mới' : '✏️ Chỉnh sửa thông tin tập thể lớp'}
+                      </span>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          setIsAddingClass(false);
+                          setEditingClassId(null);
+                        }}
+                        className="text-slate-400 hover:text-white"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                      <div>
+                        <label className="block text-[10px] text-slate-400 mb-1 font-bold">Tên lớp học</label>
+                        <input 
+                          type="text" 
+                          value={classFormLop} 
+                          onChange={(e) => setClassFormLop(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 focus:outline-none focus:border-amber-500 text-slate-200"
+                          placeholder="Ví dụ: Lớp 9A"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-400 mb-1 font-bold">Giáo viên chủ nhiệm (GVCN)</label>
+                        <input 
+                          type="text" 
+                          value={classFormGvcn} 
+                          onChange={(e) => setClassFormGvcn(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 focus:outline-none focus:border-amber-500 text-slate-200"
+                          placeholder="Ví dụ: Cô giáo Mai Lan"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-400 mb-1 font-bold">Khẩu hiệu / Slogan lớp</label>
+                        <input 
+                          type="text" 
+                          value={classFormSlogan} 
+                          onChange={(e) => setClassFormSlogan(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 focus:outline-none focus:border-amber-500 text-slate-200"
+                          placeholder="Đoàn kết là sức mạnh"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-400 mb-1 font-bold">Biểu tượng lớp</label>
+                        <select 
+                          value={classFormIcon} 
+                          onChange={(e) => setClassFormIcon(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 focus:outline-none focus:border-amber-500 text-slate-200"
+                        >
+                          <option value="Trophy">🏆 Cúp Vàng (Trophy)</option>
+                          <option value="Award">🎖️ Huy Chương (Award)</option>
+                          <option value="Flag">🚩 Cờ Đỏ (Flag)</option>
+                          <option value="Music">🎵 Nốt Nhạc (Music)</option>
+                          <option value="Heart">💖 Trái Tim (Heart)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-400 mb-1 font-bold">Sĩ số lớp học</label>
+                        <input 
+                          type="number" 
+                          value={classFormTotal} 
+                          onChange={(e) => setClassFormTotal(Number(e.target.value))}
+                          className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 focus:outline-none focus:border-amber-500 text-slate-200"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] text-slate-400 mb-1 font-bold">Danh hiệu & Thành tích tuần/tháng (Cách nhau bằng dấu phẩy)</label>
+                      <input 
+                        type="text" 
+                        value={classFormAchievements} 
+                        onChange={(e) => setClassFormAchievements(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 focus:outline-none focus:border-amber-500 text-xs text-slate-200"
+                        placeholder="Đạt nhất tuần thi đua, 100% chuyên cần tốt..."
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-1">
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          setIsAddingClass(false);
+                          setEditingClassId(null);
+                        }}
+                        className="px-3 py-1 bg-slate-800 hover:bg-slate-750 text-slate-400 rounded text-xs font-bold"
+                      >
+                        Hủy
+                      </button>
+                      <button 
+                        type="submit" 
+                        className="px-4 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded text-xs font-black"
+                      >
+                        Xác Nhận Lưu
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  {outstandingClasses.map((c) => (
+                    <div key={c.id} className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between gap-4 hover:border-slate-700 transition">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl flex items-center justify-center">
+                          {c.icon === 'Music' ? <Music className="w-5 h-5" /> : 
+                           c.icon === 'Flag' ? <Flag className="w-5 h-5" /> : 
+                           c.icon === 'Award' ? <Award className="w-5 h-5" /> : 
+                           c.icon === 'Heart' ? <Heart className="w-5 h-5" /> : 
+                           <Trophy className="w-5 h-5" />}
+                        </div>
+                        <div className="overflow-hidden">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-extrabold text-slate-200">{c.lop}</span>
+                            <span className="text-[10px] text-slate-400">GVCN: {c.gvcn}</span>
+                          </div>
+                          <p className="text-[10px] text-slate-300 font-extrabold mt-0.5">📢 Slogan: {c.slogan}</p>
+                          <p className="text-[9px] text-slate-400 truncate mt-0.5">🏆 Thành tích: {c.achievements.join(' • ')}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => startEditClass(c)}
+                          className="p-1 px-2 bg-slate-800 hover:bg-slate-750 rounded text-[10px] font-bold text-slate-200"
+                        >
+                          Sửa
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteClass(c.id)}
+                          className="p-1 px-2 bg-rose-950 hover:bg-rose-900 border border-rose-800/50 rounded text-[10px] font-bold text-rose-300"
+                        >
+                          Xóa
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Common Administration Actions Bottom row */}
+          <div className="flex justify-between items-center gap-2 pt-4 border-t border-slate-800">
+            <span className="text-[10px] text-slate-400 font-bold">
+              * Nhớ nhấp "Lưu cấu hình hệ thống" để hoàn thành cập nhật vĩnh viễn cấu hình giao diện.
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAdminSettings(false);
+                  showToast("Đã hủy thay đổi cấu hình giao diện tạm thời", "info");
+                }}
+                className="px-4 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveAdminSettings}
+                className="px-5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-black transition shadow cursor-pointer active:scale-95"
+              >
+                Lưu cấu hình hệ thống
+              </button>
+            </div>
           </div>
         </div>
       )}

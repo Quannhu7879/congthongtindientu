@@ -332,6 +332,10 @@ export default function App() {
             settings={settings}
             onSaveSettings={handleSaveSettings}
             showToast={showToast}
+            accounts={accounts}
+            onSaveAccounts={handleSaveAccounts}
+            onSaveOutstandingStudents={handleSaveOutstandingStudents}
+            onSaveOutstandingClasses={handleSaveOutstandingClasses}
           />
         );
 

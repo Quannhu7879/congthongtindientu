@@ -392,7 +392,14 @@ export const defaultSettings: SchoolSetting[] = [
     'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=800',
     'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&q=80&w=800',
     'https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&q=80&w=800'
-  ]) }
+  ]) },
+  { id: 'banner_bg_type', value: 'gradient' },
+  { id: 'banner_bg_gradient_from', value: '#1e3a8a' },
+  { id: 'banner_bg_gradient_to', value: '#1c3d5a' },
+  { id: 'banner_bg_image', value: '' },
+  { id: 'banner_featured_image', value: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=400' },
+  { id: 'current_semester', value: 'Học kỳ I' },
+  { id: 'current_school_year', value: 'Năm học 2026 - 2027' }
 ];
 
 // Load and Initialize Data

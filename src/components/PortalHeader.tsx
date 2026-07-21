@@ -234,10 +234,29 @@ export default function PortalHeader({
     showToast("Đổi mật khẩu thành công!", "success");
   };
 
+  const getSetting = (id: string, def: string) => {
+    return settings?.find(s => s.id === id)?.value || def;
+  };
+
+  const bgType = getSetting('banner_bg_type', 'gradient');
+  const bgFrom = getSetting('banner_bg_gradient_from', '#1e3a8a');
+  const bgTo = getSetting('banner_bg_gradient_to', '#1c3d5a');
+  const bgImage = getSetting('banner_bg_image', '');
+  const featuredImage = getSetting('banner_featured_image', 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=400');
+  const semester = getSetting('current_semester', 'Học kỳ I');
+  const schoolYear = getSetting('current_school_year', 'Năm học 2026 - 2027');
+
+  const headerStyle = bgType === 'image' && bgImage 
+    ? { backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : { background: `linear-gradient(to right, ${bgFrom}, ${bgTo})` };
+
   return (
     <>
       {/* Visual Header Banner */}
-      <header className="bg-gradient-to-r from-brandBlue-dark via-brandBlue to-brandBlue-dark text-white shadow-xl relative overflow-hidden border-b-4 border-brandOrange">
+      <header 
+        style={headerStyle}
+        className="text-white shadow-xl relative overflow-hidden border-b-4 border-brandOrange"
+      >
         <div className="absolute inset-0 opacity-10 pointer-events-none">
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
             <defs>
@@ -274,6 +293,23 @@ export default function PortalHeader({
               </p>
             </div>
           </div>
+
+          {/* Featured Image Frame on the top right of Hero Banner */}
+          {featuredImage && (
+            <div className="hidden md:block w-52 h-24 bg-white/10 border border-white/20 rounded-2xl overflow-hidden shadow-inner relative group cursor-pointer transition-all hover:border-white/40">
+              <img 
+                src={featuredImage} 
+                alt="Ảnh nổi bật" 
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                onError={(e) => {
+                  (e.target as any).src = 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=400';
+                }}
+              />
+              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-1 px-2.5 text-left">
+                <span className="text-[9px] font-black text-amber-300 tracking-wide uppercase">Ảnh Nổi Bật Trường</span>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
@@ -284,6 +320,14 @@ export default function PortalHeader({
             <div className="px-4 py-3 bg-blue-50/50 border-b-4 border-brandBlue flex items-center gap-2">
               <GraduationCap className="w-4 h-4" /> Cổng Học Tập Trực Tuyến THCS Hòa Phú
             </div>
+          </div>
+
+          {/* Semester & School Year display - central part of the sub-bar */}
+          <div className="hidden lg:flex items-center gap-2 px-3.5 py-1.5 bg-amber-50 border border-amber-200/50 text-amber-900 rounded-full font-extrabold text-[11px] shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+            <span>{semester}</span>
+            <span className="text-slate-300">|</span>
+            <span>{schoolYear}</span>
           </div>
           
           <div className="flex items-center gap-2 text-xs py-2 md:py-0">
