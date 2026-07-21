@@ -7,12 +7,14 @@ import {
   X,
   Bell,
   Heart,
-  Calendar
+  Calendar,
+  Phone
 } from 'lucide-react';
 
 import PortalHeader from './components/PortalHeader';
 import PortalSidebar from './components/PortalSidebar';
 import PortalOverview from './components/PortalOverview';
+import PortalRightNavBanner from './components/PortalRightNavBanner';
 
 import { 
   ClassDetailView, 
@@ -266,6 +268,12 @@ export default function App() {
     await saveSupabaseData('school_settings', newSettings);
   };
 
+  const handleSaveNotifications = async (newNotifications: SchoolNotification[]) => {
+    setNotifications(newNotifications);
+    appData.saveNotifications(newNotifications);
+    await saveSupabaseData('school_notifications', newNotifications);
+  };
+
   // Helper callbacks to switch directly to Class/Student profile pages
   const handleViewClass = (id: string) => {
     setActiveClassId(id);
@@ -498,9 +506,9 @@ export default function App() {
       />
 
       {/* Main Grid Layout */}
-      <div className="max-w-7xl w-full mx-auto px-4 py-6 flex-1 grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="max-w-7xl w-full mx-auto px-4 py-6 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Navigation Rail / Sidebar */}
-        <div className="md:col-span-1 h-fit">
+        <div className="lg:col-span-3 md:col-span-12 h-fit">
           <PortalSidebar
             currentUser={currentUser}
             currentTab={currentTab}
@@ -524,7 +532,7 @@ export default function App() {
         </div>
 
         {/* Dynamic central workspace */}
-        <div className="md:col-span-3 space-y-4">
+        <div className="lg:col-span-6 md:col-span-12 space-y-4">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeClassId || activeStudentId || currentTab}
@@ -537,7 +545,36 @@ export default function App() {
             </motion.div>
           </AnimatePresence>
         </div>
+
+        {/* Right vertical nav banner - Latest Notifications */}
+        <div className="lg:col-span-3 md:col-span-12">
+          <PortalRightNavBanner
+            notifications={notifications}
+            onSaveNotifications={handleSaveNotifications}
+            currentUser={currentUser}
+            showToast={showToast}
+          />
+        </div>
       </div>
+
+      {/* Footer / Chân trang */}
+      <footer className="w-full bg-white border-t border-slate-200 mt-auto py-6">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-bold text-slate-500">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-brandBlue"></span>
+            <span>HỆ THỐNG QUẢN TRỊ & HỌC VỤ SỐ HOÁ THCS HÒA PHÚ - PHÂN HỆ V12.15</span>
+          </div>
+          <div className="flex flex-col md:flex-row items-center gap-4 text-center md:text-right">
+            <div>
+              Bản quyền thuộc về <span className="text-brandBlue font-extrabold">thầy giáo Nghiêm Hồng Quân</span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-blue-50 text-brandBlue px-3 py-1.5 rounded-full border border-blue-100">
+              <Phone className="w-3.5 h-3.5 animate-pulse" />
+              <span>SĐT: <a href="tel:0984839799" className="hover:underline">0984839799</a></span>
+            </div>
+          </div>
+        </div>
+      </footer>
 
       {/* Modern, high-contrast Toast Notification banner */}
       <AnimatePresence>

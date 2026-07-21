@@ -62,7 +62,7 @@ export default function PortalSidebar({ currentTab, onChangeTab, currentUser }: 
   });
 
   return (
-    <aside className="lg:col-span-3 flex flex-col gap-4">
+    <aside className="flex flex-col gap-4">
       {/* Navigation Card */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="bg-gradient-to-r from-brandBlue to-brandBlue-dark text-white p-3.5 font-bold text-xs uppercase tracking-wide flex items-center gap-2">
