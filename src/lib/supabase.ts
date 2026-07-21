@@ -324,7 +324,17 @@ export async function getSupabaseData<T>(tableName: string, fallbackData: T): Pr
   }
 }
 
-// Save specific list of records to Supabase using upsert
+// Helper to lowercase only top-level keys of an object (retaining case inside JSON sub-objects)
+function lowercaseTopLevelKeys(obj: any): any {
+  if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) return obj;
+  const result: any = {};
+  for (const key of Object.keys(obj)) {
+    result[key.toLowerCase()] = obj[key];
+  }
+  return result;
+}
+
+// Save specific list of records to Supabase using upsert with self-healing fallback
 export async function saveSupabaseData<T extends { id: any }>(tableName: string, dataList: T[]): Promise<{ success: boolean; error?: string }> {
   try {
     if (!dataList || dataList.length === 0) {
@@ -337,29 +347,101 @@ export async function saveSupabaseData<T extends { id: any }>(tableName: string,
       return { success: true };
     }
     
-    // Format JSON fields before writing (some objects need simple preparation)
-    const formattedData = dataList.map(item => {
-      const copy = { ...item };
-      return copy;
-    });
+    // Create a payload copy that we can mutate if self-healing is triggered
+    let payload = dataList.map(item => ({ ...item })) as any[];
+    let attempt = 0;
+    const maxAttempts = 6;
+    let lastError: any = null;
+    let triedLowercase = false;
 
-    const { error } = await supabase.from(tableName).upsert(formattedData, { onConflict: 'id' });
-    if (error) {
-      console.error(`[Supabase Save Error] Upsert failed for "${tableName}":`, error);
-      return { success: false, error: error.message };
+    while (attempt < maxAttempts) {
+      const { error } = await supabase.from(tableName).upsert(payload, { onConflict: 'id' });
+      if (!error) {
+        lastError = null;
+        break; // Success!
+      }
+
+      lastError = error;
+      console.warn(`[Supabase Save Attempt ${attempt + 1} Failed] for "${tableName}":`, error);
+
+      const errMsg = error.message || '';
+      
+      // If we failed and haven't tried converting keys to lowercase yet, let's try it!
+      // This heals cases where PostgreSQL automatically lowercased camelCase columns during table creation.
+      if (!triedLowercase) {
+        console.warn(`[Supabase Case Fallback] Upsert failed for "${tableName}". Converting top-level payload keys to lowercase and retrying...`);
+        payload = payload.map(item => lowercaseTopLevelKeys(item));
+        triedLowercase = true;
+        // Do not increment attempt count so we don't waste an attempt count for case normalization
+        continue;
+      }
+      
+      // Look for a column name in the error message, typically in quotes or mentioned after "column"
+      let matchedColumn: string | null = null;
+      
+      const columnMatch = errMsg.match(/column "([^"]+)"/i) || 
+                          errMsg.match(/column '([^']+)'/i) ||
+                          errMsg.match(/header "([^"]+)"/i) ||
+                          errMsg.match(/column ([a-zA-Z0-9_]+)/i);
+
+      if (columnMatch) {
+        matchedColumn = columnMatch[1];
+      }
+
+      if (matchedColumn) {
+        console.warn(`[Supabase Self-Healing] Detected missing column "${matchedColumn}" in table "${tableName}". Stripping this field and retrying...`);
+        // Strip this column and its variations from all items in the payload
+        payload = payload.map(item => {
+          const copy = { ...item };
+          
+          // Delete exact column name match
+          delete copy[matchedColumn!];
+          
+          // Delete lowercase variant
+          const lowerCol = matchedColumn!.toLowerCase();
+          delete copy[lowerCol];
+          
+          // Delete any case-insensitive matches
+          for (const key of Object.keys(copy)) {
+            if (key.toLowerCase() === lowerCol) {
+              delete copy[key];
+            }
+          }
+          return copy;
+        });
+        attempt++;
+      } else {
+        // If we cannot identify the column, do not loop further and return the error
+        break;
+      }
+    }
+
+    if (lastError) {
+      console.error(`[Supabase Save Error] Upsert failed for "${tableName}" after ${attempt + 1} attempts:`, lastError);
+      return { success: false, error: lastError.message };
     }
 
     // Clean up orphaned rows (rows that are in Supabase but not in the new dataList)
-    const ids = dataList.map(item => item.id);
-    const formattedIdsStr = ids.map(id => String(id)).join(',');
-    
-    const { error: deleteError } = await supabase
-      .from(tableName)
-      .delete()
-      .not('id', 'in', `(${formattedIdsStr})`);
-
-    if (deleteError) {
-      console.warn(`[Supabase Sync Warning] Failed to delete orphaned rows for "${tableName}":`, deleteError);
+    try {
+      const { data: existingRecords, error: fetchError } = await supabase.from(tableName).select('id');
+      if (!fetchError && existingRecords) {
+        const existingIds = existingRecords.map(r => r.id);
+        const currentIds = dataList.map(item => item.id);
+        const orphanedIds = existingIds.filter(id => !currentIds.includes(id));
+        if (orphanedIds.length > 0) {
+          const { error: deleteError } = await supabase
+            .from(tableName)
+            .delete()
+            .in('id', orphanedIds);
+          if (deleteError) {
+            console.warn(`[Supabase Sync Warning] Failed to delete orphaned rows for "${tableName}":`, deleteError);
+          }
+        }
+      } else if (fetchError) {
+        console.warn(`[Supabase Sync Warning] Failed to fetch existing records for orphaned check on "${tableName}":`, fetchError);
+      }
+    } catch (cleanErr) {
+      console.warn(`[Supabase Sync Warning] Error during orphaned check for "${tableName}":`, cleanErr);
     }
 
     return { success: true };
