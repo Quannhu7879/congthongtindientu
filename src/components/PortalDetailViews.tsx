@@ -19,6 +19,7 @@ import {
   Heart
 } from 'lucide-react';
 import { OutstandingClass, OutstandingStudent, User } from '../types';
+import SmartMediaView from './SmartMediaView';
 
 interface ClassDetailViewProps {
   classId: string;
@@ -303,7 +304,7 @@ export function StudentDetailView({
         {/* Profile Card */}
         <div className="flex flex-col sm:flex-row items-center gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-200 mb-6">
           <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-white shadow-md overflow-hidden shrink-0">
-            <img src={std.avatar} alt={std.name} className="w-full h-full object-cover" />
+            <SmartMediaView url={std.avatar} alt={std.name} className="w-full h-full object-cover animate-fade-in" />
           </div>
           <div className="text-center sm:text-left flex-1 min-w-0">
             <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">

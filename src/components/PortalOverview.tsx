@@ -26,6 +26,7 @@ import {
   School
 } from 'lucide-react';
 import { User, Survey, Activity, SchoolNotification, OutstandingClass, OutstandingStudent, SchoolSetting } from '../types';
+import SmartMediaView from './SmartMediaView';
 
 interface PortalOverviewProps {
   surveys: Survey[];
@@ -1408,11 +1409,14 @@ export default function PortalOverview({
                   {activities.map((act) => (
                     <div key={act.id} className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between gap-4 hover:border-slate-700 transition">
                       <div className="flex items-center gap-3 overflow-hidden">
-                        <img 
-                          src={act.img || 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=400'} 
-                          alt="preview" 
-                          className="w-12 h-12 object-cover rounded-lg bg-slate-850" 
-                        />
+                        <div className="w-12 h-12 overflow-hidden rounded-lg bg-slate-850 shrink-0">
+                          <SmartMediaView 
+                            url={act.img} 
+                            showPlayerInDetail={false} 
+                            className="w-full h-full object-cover" 
+                            fallbackUrl="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=400" 
+                          />
+                        </div>
                         <div className="overflow-hidden">
                           <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 uppercase tracking-wider">{act.category || 'TIN TỨC'}</span>
                           <h5 className="text-xs font-black text-slate-200 truncate mt-1">{act.title}</h5>
@@ -1583,11 +1587,15 @@ export default function PortalOverview({
                   {outstandingStudents.map((stud) => (
                     <div key={stud.id} className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between gap-4 hover:border-slate-700 transition">
                       <div className="flex items-center gap-3 overflow-hidden">
-                        <img 
-                          src={stud.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'} 
-                          alt={stud.name} 
-                          className="w-10 h-10 object-cover rounded-full bg-slate-800 border border-amber-500/30" 
-                        />
+                        <div className="w-10 h-10 overflow-hidden rounded-full bg-slate-800 border border-amber-500/30 shrink-0">
+                          <SmartMediaView 
+                            url={stud.avatar} 
+                            alt={stud.name} 
+                            showPlayerInDetail={false} 
+                            className="w-full h-full object-cover" 
+                            fallbackUrl="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150" 
+                          />
+                        </div>
                         <div className="overflow-hidden">
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-extrabold text-slate-200">{stud.name}</span>
@@ -2291,7 +2299,7 @@ export default function PortalOverview({
               className="group bg-white border border-slate-200 rounded-3xl overflow-hidden cursor-pointer shadow-sm hover:shadow-lg hover:-translate-y-1 transform transition-all duration-300 flex flex-col h-full relative"
             >
               <div onClick={() => setSelectedActivity(act)} className="h-28 w-full relative overflow-hidden">
-                <img src={act.img} alt={act.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <SmartMediaView url={act.img} alt={act.title} showPlayerInDetail={false} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 <span className="absolute top-2 left-2 bg-brandBlue text-white text-[8px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider shadow">
                   {act.category}
                 </span>
@@ -2385,7 +2393,7 @@ export default function PortalOverview({
               className="group border border-slate-200 p-4 rounded-2xl bg-white relative cursor-pointer shadow-sm hover:shadow-lg hover:-translate-y-1 transform transition-all duration-300 flex items-center gap-3"
             >
               <div className="w-12 h-12 rounded-full border-2 border-brandBlue/30 overflow-hidden shrink-0 group-hover:scale-105 transition-transform">
-                <img src={std.avatar} alt={std.name} className="w-full h-full object-cover" />
+                <SmartMediaView url={std.avatar} alt={std.name} showPlayerInDetail={false} className="w-full h-full object-cover" />
               </div>
               <div className="flex-1 min-w-0">
                 <h4 className="font-extrabold text-slate-800 text-xs truncate group-hover:text-brandBlue transition-colors">
@@ -2508,11 +2516,14 @@ export default function PortalOverview({
               ) : (
                 /* READ ONLY DETAIL VIEW */
                 <>
-                  <img 
-                    src={selectedActivity.img} 
-                    alt={selectedActivity.title} 
-                    className="w-full h-44 object-cover mt-2 rounded-2xl shadow-inner" 
-                  />
+                  <div className="w-full h-44 mt-2 overflow-hidden rounded-2xl shadow-inner bg-slate-100">
+                    <SmartMediaView 
+                      url={selectedActivity.img} 
+                      alt={selectedActivity.title} 
+                      showPlayerInDetail={true} 
+                      className="w-full h-full object-cover" 
+                    />
+                  </div>
 
                   {/* Admin Editorial Controls */}
                   {canPublishNews && (
