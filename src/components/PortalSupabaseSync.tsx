@@ -32,7 +32,8 @@ import {
   SchoolNotification, 
   Activity, 
   OutstandingStudent, 
-  OutstandingClass 
+  OutstandingClass,
+  SchoolSetting
 } from '../types';
 
 interface PortalSupabaseSyncProps {
@@ -49,6 +50,7 @@ interface PortalSupabaseSyncProps {
   activities: Activity[];
   outstandingStudents: OutstandingStudent[];
   outstandingClasses: OutstandingClass[];
+  settings?: SchoolSetting[];
   showToast: (msg: string, type?: 'success' | 'info' | 'error') => void;
 }
 
@@ -66,6 +68,7 @@ export default function PortalSupabaseSync({
   activities,
   outstandingStudents,
   outstandingClasses,
+  settings,
   showToast
 }: PortalSupabaseSyncProps) {
   const [connStatus, setConnStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
@@ -118,7 +121,8 @@ export default function PortalSupabaseSync({
           school_notifications: notifications,
           school_activities: activities,
           school_outstanding_students: outstandingStudents,
-          school_outstanding_classes: outstandingClasses
+          school_outstanding_classes: outstandingClasses,
+          school_settings: settings || []
         });
         
         setSeedResults(res.results);
@@ -162,6 +166,7 @@ export default function PortalSupabaseSync({
     { name: 'school_activities', label: 'Tin tức & Hoạt động ngoại khóa', data: activities },
     { name: 'school_outstanding_students', label: 'Học sinh tiêu biểu vinh danh', data: outstandingStudents },
     { name: 'school_outstanding_classes', label: 'Tập thể lớp xuất sắc vinh danh', data: outstandingClasses },
+    { name: 'school_settings', label: 'Cấu hình hệ thống (Banner, chữ chạy)', data: settings || [] },
   ];
 
   return (

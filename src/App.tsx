@@ -57,7 +57,8 @@ import {
   SchoolNotification, 
   Activity, 
   OutstandingStudent, 
-  OutstandingClass 
+  OutstandingClass,
+  SchoolSetting 
 } from './types';
 
 export default function App() {
@@ -104,6 +105,7 @@ export default function App() {
   const [activities, setActivities] = useState<Activity[]>(() => appData.getActivities());
   const [outstandingStudents, setOutstandingStudents] = useState<OutstandingStudent[]>(() => appData.getOutstandingStudents());
   const [outstandingClasses, setOutstandingClasses] = useState<OutstandingClass[]>(() => appData.getOutstandingClasses());
+  const [settings, setSettings] = useState<SchoolSetting[]>(() => appData.getSettings());
 
   // Load live data from Supabase on mount with seamless local cache fallbacks
   useEffect(() => {
@@ -124,7 +126,8 @@ export default function App() {
           dbNotifications,
           dbActivities,
           dbOutstandingStudents,
-          dbOutstandingClasses
+          dbOutstandingClasses,
+          dbSettings
         ] = await Promise.all([
           getSupabaseData<User[]>('school_accounts', accounts),
           getSupabaseData<ClassItem[]>('school_classes', classes),
@@ -138,7 +141,8 @@ export default function App() {
           getSupabaseData<SchoolNotification[]>('school_notifications', notifications),
           getSupabaseData<Activity[]>('school_activities', activities),
           getSupabaseData<OutstandingStudent[]>('school_outstanding_students', outstandingStudents),
-          getSupabaseData<OutstandingClass[]>('school_outstanding_classes', outstandingClasses)
+          getSupabaseData<OutstandingClass[]>('school_outstanding_classes', outstandingClasses),
+          getSupabaseData<SchoolSetting[]>('school_settings', settings)
         ]);
 
         if (dbAccounts && dbAccounts.length > 0) { setAccounts(dbAccounts); appData.saveAccounts(dbAccounts); }
@@ -154,6 +158,7 @@ export default function App() {
         if (dbActivities && dbActivities.length > 0) { setActivities(dbActivities); appData.saveActivities(dbActivities); }
         if (dbOutstandingStudents && dbOutstandingStudents.length > 0) { setOutstandingStudents(dbOutstandingStudents); appData.saveOutstandingStudents(dbOutstandingStudents); }
         if (dbOutstandingClasses && dbOutstandingClasses.length > 0) { setOutstandingClasses(dbOutstandingClasses); appData.saveOutstandingClasses(dbOutstandingClasses); }
+        if (dbSettings && dbSettings.length > 0) { setSettings(dbSettings); appData.saveSettings(dbSettings); }
         
         console.log('[Supabase Sync] Đồng bộ hoàn tất!');
       } catch (err) {
@@ -255,6 +260,12 @@ export default function App() {
     await saveSupabaseData('school_activities', newActivities);
   };
 
+  const handleSaveSettings = async (newSettings: SchoolSetting[]) => {
+    setSettings(newSettings);
+    appData.saveSettings(newSettings);
+    await saveSupabaseData('school_settings', newSettings);
+  };
+
   // Helper callbacks to switch directly to Class/Student profile pages
   const handleViewClass = (id: string) => {
     setActiveClassId(id);
@@ -308,6 +319,8 @@ export default function App() {
             currentUser={currentUser}
             onViewClass={handleViewClass}
             onViewStudent={handleViewStudent}
+            settings={settings}
+            onSaveSettings={handleSaveSettings}
             showToast={showToast}
           />
         );
@@ -457,6 +470,7 @@ export default function App() {
             activities={activities}
             outstandingStudents={outstandingStudents}
             outstandingClasses={outstandingClasses}
+            settings={settings}
             showToast={showToast}
           />
         );
@@ -479,6 +493,7 @@ export default function App() {
         onLogout={handleLogout}
         accounts={accounts}
         onSaveAccounts={handleSaveAccounts}
+        settings={settings}
         showToast={showToast}
       />
 

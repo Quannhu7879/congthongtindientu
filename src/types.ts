@@ -161,3 +161,9 @@ export interface OutstandingClass {
   achievements: string[];
   guestbook: GuestbookEntry[];
 }
+
+export interface SchoolSetting {
+  id: string;
+  value: string;
+}
+

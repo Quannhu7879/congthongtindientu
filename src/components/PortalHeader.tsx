@@ -15,7 +15,7 @@ import {
   EyeOff,
   User as UserIcon
 } from 'lucide-react';
-import { User, UserRole } from '../types';
+import { User, UserRole, SchoolSetting } from '../types';
 
 interface PortalHeaderProps {
   currentUser: User | null;
@@ -23,6 +23,7 @@ interface PortalHeaderProps {
   onLogout: () => void;
   accounts: User[];
   onSaveAccounts: (newAccounts: User[]) => void;
+  settings?: SchoolSetting[];
   showToast: (msg: string, type?: 'success' | 'info' | 'error') => void;
 }
 
@@ -32,6 +33,7 @@ export default function PortalHeader({
   onLogout,
   accounts,
   onSaveAccounts,
+  settings,
   showToast
 }: PortalHeaderProps) {
   // Clock state
@@ -344,7 +346,7 @@ export default function PortalHeader({
           
           <div className="marquee-container flex-1 overflow-hidden">
             <div className="marquee-content">
-              🚀 Chào mừng quý thầy cô, phụ huynh và các em học sinh đến với Cổng thông tin điện tử & Chuyển đổi số học tập Trường THCS Hòa Phú - Ứng Hòa - Hà Nội!
+              {settings?.find(s => s.id === 'marquee_text')?.value || '🚀 Chào mừng quý thầy cô, phụ huynh và các em học sinh đến với Cổng thông tin điện tử & Chuyển đổi số học tập Trường THCS Hòa Phú - Ứng Hòa - Hà Nội!'}
             </div>
           </div>
         </div>

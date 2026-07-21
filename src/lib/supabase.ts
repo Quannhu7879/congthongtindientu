@@ -12,7 +12,8 @@ import {
   SchoolNotification, 
   Activity, 
   OutstandingStudent, 
-  OutstandingClass 
+  OutstandingClass,
+  SchoolSetting 
 } from '../types';
 
 // Read configuration from Vite env, fallback to user provided public keys
@@ -189,6 +190,12 @@ CREATE TABLE IF NOT EXISTS school_outstanding_classes (
   guestbook JSONB DEFAULT '[]'::jsonb
 );
 
+-- 14. Bảng cấu hình hệ thống (Banner, chữ chạy, ảnh)
+CREATE TABLE IF NOT EXISTS school_settings (
+  id TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
 -- Kích hoạt quyền truy cập công khai (RLS Bypass cho môi trường học tập)
 ALTER TABLE school_accounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE school_classes ENABLE ROW LEVEL SECURITY;
@@ -203,6 +210,7 @@ ALTER TABLE school_notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE school_activities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE school_outstanding_students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE school_outstanding_classes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE school_settings ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow public select" ON school_accounts FOR SELECT USING (true);
 CREATE POLICY "Allow public insert" ON school_accounts FOR INSERT WITH CHECK (true);
@@ -269,6 +277,11 @@ CREATE POLICY "Allow public select" ON school_outstanding_classes FOR SELECT USI
 CREATE POLICY "Allow public insert" ON school_outstanding_classes FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public update" ON school_outstanding_classes FOR UPDATE USING (true);
 CREATE POLICY "Allow public delete" ON school_outstanding_classes FOR DELETE USING (true);
+
+CREATE POLICY "Allow public select" ON school_settings FOR SELECT USING (true);
+CREATE POLICY "Allow public insert" ON school_settings FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update" ON school_settings FOR UPDATE USING (true);
+CREATE POLICY "Allow public delete" ON school_settings FOR DELETE USING (true);
 `;
 
 // Helper checking connection & schema health
@@ -362,6 +375,7 @@ export async function seedDefaultDataToSupabase(allData: {
   school_activities: Activity[];
   school_outstanding_students: OutstandingStudent[];
   school_outstanding_classes: OutstandingClass[];
+  school_settings?: SchoolSetting[];
 }): Promise<{ success: boolean; message: string; results: Record<string, boolean> }> {
   const results: Record<string, boolean> = {};
   let overallSuccess = true;

@@ -11,7 +11,8 @@ import {
   SchoolNotification,
   Activity,
   OutstandingStudent,
-  OutstandingClass
+  OutstandingClass,
+  SchoolSetting
 } from './types';
 
 // Helper functions for localStorage
@@ -379,8 +380,26 @@ const defaultOutstandingClasses: OutstandingClass[] = [
   }
 ];
 
+export const defaultSettings: SchoolSetting[] = [
+  { id: 'hero_title', value: 'Cổng thông tin giáo dục THCS Hòa Phú' },
+  { id: 'hero_desc', value: 'Chào mừng năm học mới. Thầy trò trường THCS Hòa Phú thi đua thực hiện đổi mới số, hướng tới dạy tốt và học tập tiến bộ không ngừng.' },
+  { id: 'hero_bg_gradient_from', value: '#1e3a8a' },
+  { id: 'hero_bg_gradient_to', value: '#1e40af' },
+  { id: 'hero_bg_image', value: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=1200' },
+  { id: 'hero_use_image', value: 'false' },
+  { id: 'marquee_text', value: '🚀 Chào mừng quý thầy cô, phụ huynh và các em học sinh đến với Cổng thông tin điện tử & Chuyển đổi số học tập Trường THCS Hòa Phú - Ứng Hòa - Hà Nội!' },
+  { id: 'carousel_images', value: JSON.stringify([
+    'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=800',
+    'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&q=80&w=800',
+    'https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&q=80&w=800'
+  ]) }
+];
+
 // Load and Initialize Data
 export const appData = {
+  getSettings: () => getStorageItem<SchoolSetting[]>('school_settings', defaultSettings),
+  saveSettings: (data: SchoolSetting[]) => setStorageItem('school_settings', data),
+
   getAccounts: () => getStorageItem<User[]>('school_accounts', defaultAccounts),
   saveAccounts: (data: User[]) => setStorageItem('school_accounts', data),
 

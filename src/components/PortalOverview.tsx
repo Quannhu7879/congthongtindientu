@@ -25,7 +25,7 @@ import {
   ChevronRight,
   School
 } from 'lucide-react';
-import { User, Survey, Activity, SchoolNotification, OutstandingClass, OutstandingStudent } from '../types';
+import { User, Survey, Activity, SchoolNotification, OutstandingClass, OutstandingStudent, SchoolSetting } from '../types';
 
 interface PortalOverviewProps {
   surveys: Survey[];
@@ -38,6 +38,8 @@ interface PortalOverviewProps {
   currentUser: User | null;
   onViewClass: (id: string) => void;
   onViewStudent: (id: number) => void;
+  settings?: SchoolSetting[];
+  onSaveSettings?: (settings: SchoolSetting[]) => void;
   showToast: (msg: string, type?: 'success' | 'info' | 'error') => void;
 }
 
@@ -52,8 +54,161 @@ export default function PortalOverview({
   currentUser,
   onViewClass,
   onViewStudent,
+  settings,
+  onSaveSettings,
   showToast
 }: PortalOverviewProps) {
+  // Helper to get configuration value with fallback
+  const getSettingValue = (id: string, defVal: string) => {
+    return settings?.find(s => s.id === id)?.value || defVal;
+  };
+
+  // Admin and Carousel state managers
+  const [showAdminSettings, setShowAdminSettings] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const [adminBannerTitle, setAdminBannerTitle] = useState(() => getSettingValue('hero_title', 'Cổng thông tin giáo dục THCS Hòa Phú'));
+  const [adminBannerDesc, setAdminBannerDesc] = useState(() => getSettingValue('hero_desc', 'Chào mừng năm học mới. Thầy trò trường THCS Hòa Phú thi đua thực hiện đổi mới số, hướng tới dạy tốt và học tập tiến bộ không ngừng.'));
+  const [adminBgType, setAdminBgType] = useState(() => getSettingValue('hero_bg_type', 'gradient'));
+  const [adminBgImage, setAdminBgImage] = useState(() => getSettingValue('hero_bg_image', 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=1200'));
+  const [adminGradFrom, setAdminGradFrom] = useState(() => getSettingValue('hero_bg_gradient_from', '#1e3a8a'));
+  const [adminGradTo, setAdminGradTo] = useState(() => getSettingValue('hero_bg_gradient_to', '#1e40af'));
+  const [adminMarqueeText, setAdminMarqueeText] = useState(() => settings?.find(s => s.id === 'marquee_text')?.value || '🚀 Chào mừng quý thầy cô, phụ huynh và các em học sinh đến với Cổng thông tin điện tử & Chuyển đổi số học tập Trường THCS Hòa Phú - Ứng Hòa - Hà Nội!');
+  
+  const [adminCarouselList, setAdminCarouselList] = useState<string[]>(() => {
+    try {
+      const val = getSettingValue('carousel_images', '[]');
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) && parsed.length > 0 ? parsed : [
+        'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=1200',
+        'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&q=80&w=1200',
+        'https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&q=80&w=1200'
+      ];
+    } catch(e) {
+      return [
+        'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=1200',
+        'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&q=80&w=1200',
+        'https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&q=80&w=1200'
+      ];
+    }
+  });
+  const [newCarouselUrl, setNewCarouselUrl] = useState('');
+
+  // Synchronize when settings change from database
+  React.useEffect(() => {
+    if (settings && settings.length > 0) {
+      setAdminBannerTitle(getSettingValue('hero_title', 'Cổng thông tin giáo dục THCS Hòa Phú'));
+      setAdminBannerDesc(getSettingValue('hero_desc', 'Chào mừng năm học mới. Thầy trò trường THCS Hòa Phú thi đua thực hiện đổi mới số, hướng tới dạy tốt và học tập tiến bộ không ngừng.'));
+      setAdminBgType(getSettingValue('hero_bg_type', 'gradient'));
+      setAdminBgImage(getSettingValue('hero_bg_image', 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=1200'));
+      setAdminGradFrom(getSettingValue('hero_bg_gradient_from', '#1e3a8a'));
+      setAdminGradTo(getSettingValue('hero_bg_gradient_to', '#1e40af'));
+      setAdminMarqueeText(settings?.find(s => s.id === 'marquee_text')?.value || '🚀 Chào mừng quý thầy cô, phụ huynh và các em học sinh đến với Cổng thông tin điện tử & Chuyển đổi số học tập Trường THCS Hòa Phú - Ứng Hòa - Hà Nội!');
+      try {
+        const val = getSettingValue('carousel_images', '[]');
+        const parsed = JSON.parse(val);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setAdminCarouselList(parsed);
+        }
+      } catch(e) {}
+    }
+  }, [settings]);
+
+  // Slideshow timer
+  React.useEffect(() => {
+    if (adminBgType !== 'carousel' || adminCarouselList.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentSlide(prev => (prev + 1) % adminCarouselList.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [adminBgType, adminCarouselList]);
+
+  // Activity Edit Form State
+  const [isEditingActivity, setIsEditingActivity] = useState(false);
+  const [editActTitle, setEditActTitle] = useState('');
+  const [editActCategory, setEditActCategory] = useState('');
+  const [editActDesc, setEditActDesc] = useState('');
+  const [editActContent, setEditActContent] = useState('');
+  const [editActImage, setEditActImage] = useState('');
+
+  const startEditActivity = (act: Activity) => {
+    setEditActTitle(act.title);
+    setEditActCategory(act.category || 'TIN TỨC');
+    setEditActDesc(act.desc || '');
+    setEditActContent(act.content || '');
+    setEditActImage(act.img || '');
+    setIsEditingActivity(true);
+  };
+
+  const handleEditActivitySubmit = (e: React.FormEvent, actId: number) => {
+    e.preventDefault();
+    if (!editActTitle.trim() || !editActDesc.trim()) {
+      showToast("Vui lòng điền đủ thông tin tiêu đề và tóm tắt!", "error");
+      return;
+    }
+    const updated = activities.map(act => {
+      if (act.id === actId) {
+        return {
+          ...act,
+          title: editActTitle.trim(),
+          category: editActCategory,
+          desc: editActDesc.trim(),
+          content: editActContent.trim() || editActDesc.trim(),
+          img: editActImage.trim()
+        };
+      }
+      return act;
+    });
+    onSaveActivities(updated);
+    setIsEditingActivity(false);
+    setSelectedActivity(updated.find(x => x.id === actId) || null);
+    showToast("Đã cập nhật bài viết thành công!", "success");
+  };
+
+  const handleDeleteActivity = (actId: number) => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa bài viết này không?")) {
+      const updated = activities.filter(act => act.id !== actId);
+      onSaveActivities(updated);
+      setSelectedActivity(null);
+      setIsEditingActivity(false);
+      showToast("Đã xóa bài viết khỏi hệ thống!", "success");
+    }
+  };
+
+  const handleSaveAdminSettings = () => {
+    if (!onSaveSettings) return;
+
+    const updatedSettings: SchoolSetting[] = [
+      { id: 'hero_title', value: adminBannerTitle.trim() },
+      { id: 'hero_desc', value: adminBannerDesc.trim() },
+      { id: 'hero_bg_type', value: adminBgType },
+      { id: 'hero_bg_image', value: adminBgImage.trim() },
+      { id: 'hero_bg_gradient_from', value: adminGradFrom.trim() },
+      { id: 'hero_bg_gradient_to', value: adminGradTo.trim() },
+      { id: 'marquee_text', value: adminMarqueeText.trim() },
+      { id: 'carousel_images', value: JSON.stringify(adminCarouselList) }
+    ];
+
+    onSaveSettings(updatedSettings);
+    showToast("Đã lưu và đồng bộ cấu hình giao diện thành công!", "success");
+    setShowAdminSettings(false);
+  };
+
+  const handleAddCarouselImage = () => {
+    if (!newCarouselUrl.trim()) return;
+    if (!newCarouselUrl.startsWith('http')) {
+      showToast("Vui lòng nhập URL ảnh hợp lệ!", "error");
+      return;
+    }
+    setAdminCarouselList([...adminCarouselList, newCarouselUrl.trim()]);
+    setNewCarouselUrl('');
+    showToast("Đã thêm ảnh vào danh sách tạm, hãy nhấp 'Lưu cấu hình' để hoàn thành!", "info");
+  };
+
+  const handleRemoveCarouselImage = (idxToRemove: number) => {
+    setAdminCarouselList(adminCarouselList.filter((_, idx) => idx !== idxToRemove));
+    showToast("Đã xóa ảnh khỏi danh sách tạm, hãy nhấp 'Lưu cấu hình' để hoàn thành!", "info");
+  };
   // Survey panel tab
   const [surveyTab, setSurveyTab] = useState<'online' | 'upload' | 'list'>('online');
   const [starRating, setStarRating] = useState<number>(5);
@@ -613,19 +768,239 @@ export default function PortalOverview({
   return (
     <section className="col-span-1 lg:col-span-6 flex flex-col gap-6 animate-fade-in">
       {/* Welcome Banner */}
-      <div className="bg-gradient-to-br from-brandBlue to-blue-800 rounded-3xl p-5 text-white relative overflow-hidden shadow-md">
-        <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-4 translate-y-4">
+      {currentUser?.role === 'Admin' && (
+        <div className="flex justify-between items-center bg-slate-800 text-white p-3 rounded-2xl shadow-sm border border-slate-700">
+          <span className="text-xs font-black tracking-wide uppercase flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+            Chế độ quản trị viên hệ thống
+          </span>
+          <button
+            onClick={() => setShowAdminSettings(!showAdminSettings)}
+            className="p-1.5 px-3 bg-brandOrange hover:bg-orange-600 rounded-lg text-[10px] font-black tracking-wider uppercase transition cursor-pointer active:scale-95 shadow"
+          >
+            {showAdminSettings ? 'Đóng cấu hình' : '⚙️ Quản Trị Banner & Chữ Chạy'}
+          </button>
+        </div>
+      )}
+
+      {/* Admin settings slide board */}
+      {currentUser?.role === 'Admin' && showAdminSettings && (
+        <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl text-white space-y-4 shadow-xl animate-fade-in">
+          <h3 className="text-xs font-black uppercase text-brandOrange tracking-wider pb-2 border-b border-slate-800 flex items-center gap-2">
+            <span>⚙️</span> Bảng điều hành giao diện trang chủ & thông báo
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Left Col */}
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Tiêu đề Hero Banner</label>
+                <input
+                  type="text"
+                  value={adminBannerTitle}
+                  onChange={(e) => setAdminBannerTitle(e.target.value)}
+                  className="w-full text-xs bg-slate-950 border border-slate-800 rounded-lg p-2 focus:ring-1 focus:ring-brandOrange focus:outline-none"
+                  placeholder="Nhập tiêu đề lớn..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Mô tả Hero Banner</label>
+                <textarea
+                  value={adminBannerDesc}
+                  onChange={(e) => setAdminBannerDesc(e.target.value)}
+                  className="w-full text-xs bg-slate-950 border border-slate-800 rounded-lg p-2 h-20 focus:ring-1 focus:ring-brandOrange focus:outline-none resize-none"
+                  placeholder="Nhập mô tả tóm tắt..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Kiểu nền Banner</label>
+                <select
+                  value={adminBgType}
+                  onChange={(e) => setAdminBgType(e.target.value)}
+                  className="w-full text-xs bg-slate-950 border border-slate-800 rounded-lg p-2 focus:ring-1 focus:ring-brandOrange focus:outline-none"
+                >
+                  <option value="gradient">Dải màu Gradient</option>
+                  <option value="image">Ảnh nền tĩnh (URL)</option>
+                  <option value="carousel">Slide ảnh chạy tự động (Carousel)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Chữ chạy thông báo (Marquee)</label>
+                <input
+                  type="text"
+                  value={adminMarqueeText}
+                  onChange={(e) => setAdminMarqueeText(e.target.value)}
+                  className="w-full text-xs bg-slate-950 border border-slate-800 rounded-lg p-2 focus:ring-1 focus:ring-brandOrange focus:outline-none"
+                  placeholder="Nhập văn bản chạy đầu trang..."
+                />
+              </div>
+            </div>
+
+            {/* Right Col */}
+            <div className="space-y-3">
+              {adminBgType === 'gradient' && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Màu bắt đầu</label>
+                    <input
+                      type="color"
+                      value={adminGradFrom}
+                      onChange={(e) => setAdminGradFrom(e.target.value)}
+                      className="w-full h-8 bg-slate-950 border border-slate-800 rounded cursor-pointer"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Màu kết thúc</label>
+                    <input
+                      type="color"
+                      value={adminGradTo}
+                      onChange={(e) => setAdminGradTo(e.target.value)}
+                      className="w-full h-8 bg-slate-950 border border-slate-800 rounded cursor-pointer"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {adminBgType === 'image' && (
+                <div>
+                  <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">URL ảnh nền tĩnh</label>
+                  <input
+                    type="text"
+                    value={adminBgImage}
+                    onChange={(e) => setAdminBgImage(e.target.value)}
+                    className="w-full text-xs bg-slate-950 border border-slate-800 rounded-lg p-2 focus:ring-1 focus:ring-brandOrange focus:outline-none"
+                    placeholder="https://images.unsplash.com/photo-..."
+                  />
+                  <img src={adminBgImage} alt="Preview" className="mt-2 w-full h-24 object-cover rounded-lg border border-slate-800" onError={(e) => { (e.target as any).src = "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=400" }} />
+                </div>
+              )}
+
+              {adminBgType === 'carousel' && (
+                <div className="space-y-2">
+                  <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Quản lý Slide ảnh chạy tự động ({adminCarouselList.length})</label>
+                  
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newCarouselUrl}
+                      onChange={(e) => setNewCarouselUrl(e.target.value)}
+                      className="flex-1 text-xs bg-slate-950 border border-slate-800 rounded-lg p-2 focus:ring-1 focus:ring-brandOrange focus:outline-none"
+                      placeholder="Thêm URL ảnh..."
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCarouselImage}
+                      className="px-2.5 bg-brandOrange hover:bg-orange-600 rounded-lg text-xs font-bold"
+                    >
+                      Thêm
+                    </button>
+                  </div>
+
+                  <div className="max-h-36 overflow-y-auto space-y-1.5 p-1 bg-slate-950 border border-slate-800 rounded-lg">
+                    {adminCarouselList.map((img, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-[10px] bg-slate-900 border border-slate-800 p-1.5 rounded gap-2">
+                        <span className="truncate flex-1 text-slate-300 font-mono">{img}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCarouselImage(idx)}
+                          className="text-rose-500 hover:text-rose-400 font-bold px-1"
+                        >
+                          Xóa
+                        </button>
+                      </div>
+                    ))}
+                    {adminCarouselList.length === 0 && (
+                      <p className="text-center text-slate-500 text-[10px] py-4">Chưa có ảnh nào. Hãy thêm ảnh!</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+            <button
+              type="button"
+              onClick={() => {
+                setShowAdminSettings(false);
+                showToast("Đã hủy thay đổi cấu hình tạm thời", "info");
+              }}
+              className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-extrabold transition cursor-pointer"
+            >
+              Hủy bỏ
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveAdminSettings}
+              className="px-5 py-1.5 bg-brandOrange hover:bg-orange-600 text-white rounded-xl text-xs font-black transition shadow cursor-pointer active:scale-95"
+            >
+              Lưu cấu hình hệ thống
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Welcome Banner */}
+      <div 
+        className="rounded-3xl p-6 text-white relative overflow-hidden shadow-md transition-all duration-700 min-h-[180px] flex flex-col justify-center"
+        style={{
+          background: adminBgType === 'gradient'
+            ? `linear-gradient(to bottom right, ${adminGradFrom}, ${adminGradTo})`
+            : adminBgType === 'image'
+            ? `linear-gradient(to bottom, rgba(30, 58, 138, 0.45), rgba(30, 64, 175, 0.85)), url(${adminBgImage}) center/cover no-repeat`
+            : 'none'
+        }}
+      >
+        {/* Background carousel if selected */}
+        {adminBgType === 'carousel' && adminCarouselList.length > 0 && (
+          <div className="absolute inset-0 z-0 pointer-events-none">
+            {adminCarouselList.map((img, idx) => (
+              <div
+                key={idx}
+                className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ${
+                  currentSlide === idx ? 'opacity-100' : 'opacity-0'
+                }`}
+                style={{
+                  backgroundImage: `linear-gradient(to bottom, rgba(30, 58, 138, 0.5), rgba(30, 64, 175, 0.85)), url(${img})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}
+              />
+            ))}
+            
+            {/* Carousel dots / navigation */}
+            <div className="absolute bottom-4 right-5 z-10 flex gap-1.5 bg-black/30 pointer-events-auto px-2.5 py-1 rounded-full">
+              {adminCarouselList.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentSlide(idx)}
+                  className={`w-1.5 h-1.5 rounded-full transition-all ${
+                    currentSlide === idx ? 'bg-white scale-125' : 'bg-white/50 hover:bg-white/80'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-4 translate-y-4 pointer-events-none z-0">
           <School className="w-48 h-48" />
         </div>
-        <span className="bg-brandOrange text-white px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-widest shadow-sm">
-          Premium V12.15
-        </span>
-        <h2 className="text-xl md:text-2xl font-black mt-2 mb-1">
-          Cổng thông tin giáo dục THCS Hòa Phú
-        </h2>
-        <p className="text-xs text-blue-100 max-w-md">
-          Chào mừng năm học mới. Thầy trò trường THCS Hòa Phú thi đua thực hiện đổi mới số, hướng tới dạy tốt và học tập tiến bộ không ngừng.
-        </p>
+        
+        <div className="relative z-10">
+          <span className="bg-brandOrange text-white px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-widest shadow-sm">
+            Ứng dụng Chuyển đổi số học tập
+          </span>
+          <h2 className="text-xl md:text-2xl font-black mt-2 mb-1.5 drop-shadow-md">
+            {adminBannerTitle}
+          </h2>
+          <p className="text-xs text-blue-100 max-w-md drop-shadow-sm font-semibold leading-relaxed">
+            {adminBannerDesc}
+          </p>
+        </div>
       </div>
 
       {/* Parents Surveys / Opinions Widget */}
@@ -1166,92 +1541,199 @@ export default function PortalOverview({
               className="bg-white rounded-3xl max-w-md w-full p-6 relative shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto custom-scrollbar"
             >
               <button 
-                onClick={() => setSelectedActivity(null)}
+                onClick={() => {
+                  setSelectedActivity(null);
+                  setIsEditingActivity(false);
+                }}
                 className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
-              
-              <img 
-                src={selectedActivity.img} 
-                alt={selectedActivity.title} 
-                className="w-full h-44 object-cover mt-2 rounded-2xl shadow-inner" 
-              />
-              
-              <h3 className="font-black text-slate-800 text-sm md:text-base mt-4 leading-snug">
-                {selectedActivity.title}
-              </h3>
-              
-              <p className="text-[10px] text-slate-400 font-bold mt-1.5 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5" /> <span>Đăng lúc: {selectedActivity.date}</span>
-              </p>
-              
-              <div className="mt-4">
-                <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-2xl border border-slate-100 font-medium whitespace-pre-line">
-                  {selectedActivity.content}
-                </p>
-              </div>
-              
-              {/* Like / Comments Module */}
-              <div className="mt-4 border-t pt-4">
-                <div className="flex items-center justify-between mb-3 text-xs font-bold text-slate-700">
-                  <span className="flex items-center gap-1.5 text-slate-800 uppercase tracking-wider">
-                    <MessageSquare className="w-4 h-4 text-brandOrange animate-pulse" /> 
-                    Bình luận ({selectedActivity.comments ? selectedActivity.comments.length : 0})
-                  </span>
+
+              {isEditingActivity ? (
+                /* EDIT FORM FOR ACTIVITY */
+                <form onSubmit={(e) => handleEditActivitySubmit(e, selectedActivity.id)} className="space-y-4 mt-4">
+                  <h3 className="font-black text-slate-800 text-sm uppercase tracking-wide border-b pb-2">
+                    📝 Hiệu chỉnh bài viết
+                  </h3>
                   
-                  <button 
-                    onClick={(e) => handleLikeActivity(e, selectedActivity.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${
-                      selectedActivity.likedByUser 
-                        ? 'bg-rose-100 text-rose-500 hover:bg-rose-200' 
-                        : 'bg-rose-50 text-rose-400 hover:bg-rose-100'
-                    }`}
-                  >
-                    <Heart className={`w-3.5 h-3.5 ${selectedActivity.likedByUser ? 'fill-rose-500' : ''}`} />
-                    <span>{selectedActivity.likes} Thích</span>
-                  </button>
-                </div>
-                
-                {/* Write Comment Form */}
-                <form onSubmit={(e) => handleAddComment(e, selectedActivity.id)} className="flex gap-2 mb-3">
-                  <input 
-                    type="text" 
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    className="flex-1 text-xs px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-brandOrange font-medium" 
-                    placeholder="Viết bình luận công khai đóng góp..."
-                    required
-                  />
-                  <button 
-                    type="submit"
-                    className="bg-brandOrange hover:bg-brandOrange-dark text-white text-xs font-bold px-3 py-2 rounded-xl transition shadow flex items-center justify-center cursor-pointer"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                  </button>
+                  <div>
+                    <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Tiêu đề bài viết</label>
+                    <input
+                      type="text"
+                      value={editActTitle}
+                      onChange={(e) => setEditActTitle(e.target.value)}
+                      className="w-full text-xs border rounded-xl p-2.5 font-medium focus:ring-1 focus:ring-brandOrange focus:outline-none"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Danh mục</label>
+                      <select
+                        value={editActCategory}
+                        onChange={(e) => setEditActCategory(e.target.value)}
+                        className="w-full text-xs border rounded-xl p-2.5 font-medium focus:ring-1 focus:ring-brandOrange focus:outline-none"
+                      >
+                        <option value="TIN TỨC">TIN TỨC</option>
+                        <option value="SỰ KIỆN">SỰ KIỆN</option>
+                        <option value="VĂN THỂ">VĂN THỂ</option>
+                        <option value="THÔNG BÁO">THÔNG BÁO</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Ảnh đại diện (URL)</label>
+                      <input
+                        type="text"
+                        value={editActImage}
+                        onChange={(e) => setEditActImage(e.target.value)}
+                        className="w-full text-xs border rounded-xl p-2.5 font-medium focus:ring-1 focus:ring-brandOrange focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Tóm tắt ngắn</label>
+                    <textarea
+                      value={editActDesc}
+                      onChange={(e) => setEditActDesc(e.target.value)}
+                      className="w-full text-xs border rounded-xl p-2.5 font-medium h-16 resize-none focus:ring-1 focus:ring-brandOrange focus:outline-none"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] uppercase font-black text-slate-400 mb-1">Nội dung chi tiết</label>
+                    <textarea
+                      value={editActContent}
+                      onChange={(e) => setEditActContent(e.target.value)}
+                      className="w-full text-xs border rounded-xl p-2.5 font-medium h-32 resize-none focus:ring-1 focus:ring-brandOrange focus:outline-none"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2 border-t">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingActivity(false)}
+                      className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-1.5 bg-brandOrange hover:bg-orange-600 text-white rounded-xl text-xs font-black transition shadow"
+                    >
+                      Cập nhật bài viết
+                    </button>
+                  </div>
                 </form>
-                
-                {/* Comments List */}
-                <div className="space-y-2.5 max-h-40 overflow-y-auto custom-scrollbar p-1">
-                  {selectedActivity.comments && selectedActivity.comments.length > 0 ? (
-                    selectedActivity.comments.map((comment, cidx) => (
-                      <div key={cidx} className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex flex-col gap-1">
-                        <div className="flex justify-between items-center text-[9px] font-bold">
-                          <span className="text-brandBlue">{comment.username}</span>
-                          <span className="text-slate-400 font-mono">{comment.date}</span>
-                        </div>
-                        <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
-                          {comment.text}
-                        </p>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center text-slate-400 py-3 text-[11px] font-medium">
-                      Chưa có phản hồi nào. Hãy thảo luận đầu tiên!
+              ) : (
+                /* READ ONLY DETAIL VIEW */
+                <>
+                  <img 
+                    src={selectedActivity.img} 
+                    alt={selectedActivity.title} 
+                    className="w-full h-44 object-cover mt-2 rounded-2xl shadow-inner" 
+                  />
+
+                  {/* Admin Editorial Controls */}
+                  {canPublishNews && (
+                    <div className="flex gap-2 mt-3 bg-slate-50 p-2 rounded-2xl border border-slate-100 justify-end">
+                      <button
+                        type="button"
+                        onClick={() => startEditActivity(selectedActivity)}
+                        className="p-1 px-3 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-[10px] font-bold border border-blue-200 transition cursor-pointer flex items-center gap-1"
+                      >
+                        Sửa bài viết
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteActivity(selectedActivity.id)}
+                        className="p-1 px-3 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg text-[10px] font-bold border border-rose-200 transition cursor-pointer flex items-center gap-1"
+                      >
+                        Xóa bài viết
+                      </button>
                     </div>
                   )}
-                </div>
-              </div>
+                  
+                  <h3 className="font-black text-slate-800 text-sm md:text-base mt-4 leading-snug">
+                    {selectedActivity.title}
+                  </h3>
+                  
+                  <p className="text-[10px] text-slate-400 font-bold mt-1.5 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" /> <span>Đăng lúc: {selectedActivity.date}</span>
+                  </p>
+                  
+                  <div className="mt-4">
+                    <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-2xl border border-slate-100 font-medium whitespace-pre-line">
+                      {selectedActivity.content}
+                    </p>
+                  </div>
+                  
+                  {/* Like / Comments Module */}
+                  <div className="mt-4 border-t pt-4">
+                    <div className="flex items-center justify-between mb-3 text-xs font-bold text-slate-700">
+                      <span className="flex items-center gap-1.5 text-slate-800 uppercase tracking-wider">
+                        <MessageSquare className="w-4 h-4 text-brandOrange animate-pulse" /> 
+                        Bình luận ({selectedActivity.comments ? selectedActivity.comments.length : 0})
+                      </span>
+                      
+                      <button 
+                        onClick={(e) => handleLikeActivity(e, selectedActivity.id)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${
+                          selectedActivity.likedByUser 
+                            ? 'bg-rose-100 text-rose-500 hover:bg-rose-200' 
+                            : 'bg-rose-50 text-rose-400 hover:bg-rose-100'
+                        }`}
+                      >
+                        <Heart className={`w-3.5 h-3.5 ${selectedActivity.likedByUser ? 'fill-rose-500' : ''}`} />
+                        <span>{selectedActivity.likes} Thích</span>
+                      </button>
+                    </div>
+                    
+                    {/* Write Comment Form */}
+                    <form onSubmit={(e) => handleAddComment(e, selectedActivity.id)} className="flex gap-2 mb-3">
+                      <input 
+                        type="text" 
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        className="flex-1 text-xs px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-brandOrange font-medium" 
+                        placeholder="Viết bình luận công khai đóng góp..."
+                        required
+                      />
+                      <button 
+                        type="submit"
+                        className="bg-brandOrange hover:bg-brandOrange-dark text-white text-xs font-bold px-3 py-2 rounded-xl transition shadow flex items-center justify-center cursor-pointer"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                      </button>
+                    </form>
+                    
+                    {/* Comments List */}
+                    <div className="space-y-2.5 max-h-40 overflow-y-auto custom-scrollbar p-1">
+                      {selectedActivity.comments && selectedActivity.comments.length > 0 ? (
+                        selectedActivity.comments.map((comment, cidx) => (
+                          <div key={cidx} className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex flex-col gap-1">
+                            <div className="flex justify-between items-center text-[9px] font-bold">
+                              <span className="text-brandBlue">{comment.username}</span>
+                              <span className="text-slate-400 font-mono">{comment.date}</span>
+                            </div>
+                            <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
+                              {comment.text}
+                            </p>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center text-slate-400 py-3 text-[11px] font-medium">
+                          Chưa có phản hồi nào. Hãy thảo luận đầu tiên!
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
             </motion.div>
           </div>
         )}
